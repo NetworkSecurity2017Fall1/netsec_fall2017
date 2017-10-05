@@ -1,7 +1,7 @@
 """Client"""
-import Packets
 import asyncio
 import sys, time, os, logging
+from . import Packets
 from playground import getConnector
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
@@ -74,7 +74,8 @@ class PEEPClientProtocol(StackingProtocol):
                 if pkt.Type == 1 and self.state == 0:
                     response = Packets.PEEPPacket()
                     response.Type = 2
-                    response.SequenceNumber = pkt.SequenceNumber + 1
+                    response.Acknowlegement = pkt.SequenceNumber + 1
+                    response.SequenceNumber = pkt.Acknowledgement
                     response.Checksum = response.calculateChecksum()
                     response_bytes = response.__serialize__()
                     self.transport.write(response_bytes)
