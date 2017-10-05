@@ -74,7 +74,7 @@ class PEEPClientProtocol(StackingProtocol):
                 if pkt.Type == 1 and self.state == 0:
                     response = Packets.PEEPPacket()
                     response.Type = 2
-                    response.Acknowlegement = pkt.SequenceNumber + 1
+                    response.Acknowledgement = pkt.SequenceNumber + 1
                     response.SequenceNumber = pkt.Acknowledgement
                     response.Checksum = response.calculateChecksum()
                     response_bytes = response.__serialize__()
