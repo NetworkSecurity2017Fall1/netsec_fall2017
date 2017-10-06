@@ -52,9 +52,6 @@ class PEEPServerProtocol(StackingProtocol):
         self.higherProtocol().connection_lost()
 
 
-
-
-
 class PEEPClientProtocol(StackingProtocol):
     def __init__(self):
         self.deserializer = PacketType.Deserializer()
