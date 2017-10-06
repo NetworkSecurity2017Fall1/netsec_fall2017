@@ -35,7 +35,7 @@ class PEEPServerProtocol(StackingProtocol):
                 self.state = 2
                 # Only when handshake is completed should we call higher protocol's connection_made
                 print("Server: Handshake is completed.")
-                higher_transport = StackingTransport(self.transport)
+                higher_transport = Transport.MyProtocolTransport(self.transport)
                 self.higherProtocol().connection_made(higher_transport)
             elif self.state == 2:
                 # Only when handshake is completed should we call higher protocol's data_received
@@ -80,7 +80,7 @@ class PEEPClientProtocol(StackingProtocol):
                     self.state = 2
                     # Only when handshake is completed should we call higher protocol's connection_made
                     print("Client: Handshake is completed.")
-                    higher_transport = StackingTransport(self.transport)
+                    higher_transport = Transport.MyProtocolTransport(self.transport)
                     self.higherProtocol().connection_made(higher_transport)
                 elif self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
