@@ -1,4 +1,4 @@
-"""Client"""
+"""Protocols"""
 import asyncio
 import sys, time, os, logging
 from . import Packets, Transport
@@ -6,6 +6,7 @@ from playground import getConnector
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
 from playground import Connector, setConnector
+
 
 class PEEPServerProtocol(StackingProtocol):
     def __init__(self):
@@ -111,11 +112,6 @@ class PEEPClientProtocol(StackingProtocol):
         print("Client: Starting handshake. Sending first packet. Type = 0")
         self.transport.write(response_bytes)
 
-def lab2ClientFactory():
-    return StackingProtocolFactory(lambda: PEEPClient.PassThroughLayer1(), lambda: PEEPClientProtocol())
-
-def lab2ServerFactory():
-    return StackingProtocolFactory(lambda: PEEPServer.PassThroughLayer1(), lambda: PEEPServerProtocol())
 
 
 
