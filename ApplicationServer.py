@@ -1,10 +1,9 @@
-"""Server"""
+"""Application Server"""
 
-import lab2.src.lab2_protocol
+from lab2.src.lab2_protocol import Packets
 import asyncio
 from playground import getConnector
 from playground.network.packet import PacketType
-from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
 
 
 class ServerProtocol(asyncio.Protocol):

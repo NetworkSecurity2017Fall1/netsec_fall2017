@@ -1,11 +1,9 @@
-"""Client"""
+"""Application Client"""
 
 import asyncio
-import lab2.src.lab2_protocol
+from lab2.src.lab2_protocol import Packets
 from playground import getConnector
 from playground.network.packet import PacketType
-from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
-from playground import Connector, setConnector
 
 
 class ClientProtocol(asyncio.Protocol):
