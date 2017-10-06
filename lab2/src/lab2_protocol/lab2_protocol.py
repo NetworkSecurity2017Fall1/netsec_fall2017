@@ -1,7 +1,7 @@
 """Client"""
 import asyncio
 import sys, time, os, logging
-from . import Packets
+from . import Packets, Transport
 from playground import getConnector
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
