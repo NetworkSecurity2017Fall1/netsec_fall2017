@@ -1,8 +1,10 @@
-from Packets import PEEPPacket
+"""ReliableTransmission"""
+
+from .Packets import PEEPPacket
 import random
 
-class ReliableTransmission:
 
+class ReliableTransmission:
     def __init__(self):
         self.pktReceived = []
         self.WindowSize = 5
@@ -31,7 +33,6 @@ class ReliableTransmission:
     def sortPacketBySeqNum(self):
         self.pktReceived.sort(key=lambda pkt: pkt.SequenceNumber, reverse=False)
         return self.pktReceived
-
 
 
 if __name__ == "__main__":
