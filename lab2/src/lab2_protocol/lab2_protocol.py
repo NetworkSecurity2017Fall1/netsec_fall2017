@@ -1,11 +1,8 @@
 """Protocols"""
-import asyncio
-import sys, time, os, logging
+
 from . import Packets, Transport
-from playground import getConnector
 from playground.network.packet import PacketType
-from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
-from playground import Connector, setConnector
+from playground.network.common import StackingProtocol
 
 
 class PEEPServerProtocol(StackingProtocol):

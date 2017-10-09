@@ -1,7 +1,10 @@
+"""Transport"""
+
 from playground.network.common import StackingTransport
 from . import Packets
-class MyProtocolTransport(StackingTransport):
 
+
+class MyProtocolTransport(StackingTransport):
     def write(self, data):
     # this will be the data from the upper layer
         chunk_size = 1024

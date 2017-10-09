@@ -1,3 +1,5 @@
+""""Packets"""
+
 import zlib
 import struct
 import asyncio
