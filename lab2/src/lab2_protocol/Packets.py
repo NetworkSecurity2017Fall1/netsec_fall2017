@@ -1,7 +1,6 @@
 """"Packets"""
 
 import zlib
-import struct
 import asyncio
 import logging
 from playground.network.packet import PacketType
@@ -52,22 +51,23 @@ class PEEPPacket(PacketType):
     ]
 
     def to_string(self):
-        seqNum = self.SequenceNumber
-        if seqNum == self.UNSET:
-            seqNum = "-"
+        seq_num = self.SequenceNumber
+        if seq_num == self.UNSET:
+            seq_num = "-"
 
-        ackNum = self.Acknowledgement
-        if ackNum == self.UNSET:
-            ackNum = "-"
+        ack_num = self.Acknowledgement
+        if ack_num == self.UNSET:
+            ack_num = "-"
 
-        dataLen = self.dataoffset()
-        return "(): SEQ({}), ACK({}), Checksum({}), Data Length({})".format(self.packetType(), seqNum, ackNum, self.Checksum, dataLen)
+        data_len = self.dataoffset()
+        return "(): SEQ({}), ACK({}), Checksum({}), Data Length({})".format(self.packetType(), seq_num, ack_num,
+                                                                            self.Checksum, data_len)
     
     def calculateChecksum(self):
-        oldChecksum = self.Checksum
+        old_checksum = self.Checksum
         self.Checksum = 0
         bytes = self.__serialize__()
-        self.Checksum = oldChecksum
+        self.Checksum = old_checksum
         return zlib.adler32(bytes) & 0xffff
     
     def updateChecksum(self):
@@ -75,6 +75,7 @@ class PEEPPacket(PacketType):
     
     def verifyChecksum(self):
         return self.Checksum == self.calculateChecksum()
+
 
 # PEEP Protocol Types
 # -------------------
@@ -84,6 +85,3 @@ class PEEPPacket(PacketType):
 # RIP -      TYPE 3
 # RIP-ACK -  TYPE 4
 # DATA -     TYPE 5
-
-
-
