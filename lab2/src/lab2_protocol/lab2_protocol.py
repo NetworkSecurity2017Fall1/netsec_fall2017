@@ -12,13 +12,13 @@ class PEEPServerProtocol(StackingProtocol):
         super().__init__()
 
     def connection_made(self, transport):
-        print("Server: Received a connection from {}".format(transport.get_extra_info("peername")))
+        print("PEEPServer: Received a connection from {}".format(transport.get_extra_info("peername")))
         self.transport = transport
 
     def data_received(self, data):
         self.deserializer.update(data)
         for pkt in self.deserializer.nextPackets():
-            print("Server: Received PEEPPacket from client. Type = ", pkt.Type)
+            print("PEEPServer: Received PEEPPacket from client. Type = ", pkt.Type)
             if pkt.Type == 0 and self.state == 0:
                 self.state = 1
                 packet_response = Packets.PEEPPacket()
@@ -31,20 +31,20 @@ class PEEPServerProtocol(StackingProtocol):
             elif pkt.Type == 2 and self.state == 1:
                 self.state = 2
                 # Only when handshake is completed should we call higher protocol's connection_made
-                print("Server: Handshake is completed.")
+                print("PEEPServer: Handshake is completed.")
                 higher_transport = Transport.MyProtocolTransport(self.transport)
                 self.higherProtocol().connection_made(higher_transport)
-            elif self.state == 2:
+            elif pkt.Type == 5 and self.state == 2:
                 # Only when handshake is completed should we call higher protocol's data_received
-                print("Server: Data passes up PEEPServerProtocol.")
-                self.higherProtocol().data_received(data)
+                print("PEEPServer: Data passes up PEEPServerProtocol.")
+                self.higherProtocol().data_received(pkt.Data)
             else:
                 self.state = 0
                 self.transport = None
                 break
 
     def connection_lost(self, exc):
-        print("Server: Lost connection to client. Cleaning up.")
+        print("PEEPServer: Lost connection to client. Cleaning up.")
         self.transport = None
         self.higherProtocol().connection_lost()
 
@@ -56,7 +56,7 @@ class PEEPClientProtocol(StackingProtocol):
         super().__init__()
 
     def connection_made(self, transport):
-        print("Client: Connection Established With Server")
+        print("PEEPClient: Connection Established With Server")
         self.transport = transport
         self.handshake()
 
@@ -65,8 +65,8 @@ class PEEPClientProtocol(StackingProtocol):
         for pkt in self.deserializer.nextPackets():
             if isinstance(pkt, Packets.PEEPPacket):
                 # print(pkt.to_string())
-                print("Client: Received PEEPPacket From Server. Type = ", pkt.Type)
-                if pkt.Type == 1 and self.state == 0:
+                print("PEEPClient: Received PEEPPacket From Server. Type = ", pkt.Type)
+                if pkt.Type == 1 and self.state == 1:
                     response = Packets.PEEPPacket()
                     response.Type = 2
                     response.Acknowledgement = pkt.SequenceNumber + 1
@@ -76,13 +76,13 @@ class PEEPClientProtocol(StackingProtocol):
                     self.transport.write(response_bytes)
                     self.state = 2
                     # Only when handshake is completed should we call higher protocol's connection_made
-                    print("Client: Handshake is completed.")
+                    print("PEEPClient: Handshake is completed.")
                     higher_transport = Transport.MyProtocolTransport(self.transport)
                     self.higherProtocol().connection_made(higher_transport)
-                elif self.state == 2:
+                elif pkt.Type == 5 and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
-                    print("Client: Data passes up PEEPClientProtocol.")
-                    self.higherProtocol().data_received(data)
+                    print("PEEPClient: Data passes up PEEPClientProtocol.")
+                    self.higherProtocol().data_received(pkt.Data)
                 else:
                     self.transport = None
                     break
@@ -91,7 +91,7 @@ class PEEPClientProtocol(StackingProtocol):
                 break
 
     def connection_lost(self, exc):
-        print("Client: Connection Lost in PEEPClientProtocol")
+        print("PEEPClient: Connection Lost in PEEPClientProtocol")
         self.transport = None
         self.higherProtocol().connection_lost()
 
@@ -100,12 +100,9 @@ class PEEPClientProtocol(StackingProtocol):
         response.Type = 0
         response.SequenceNumber = 0
         response.Checksum = response.calculateChecksum()
-        print("Client: checksum =", response.Checksum)
+        print("PEEPClient: checksum =", response.Checksum)
         # print(response.to_string())
         response_bytes = response.__serialize__()
-        print("Client: Starting handshake. Sending first packet. Type = 0")
+        print("PEEPClient: Starting handshake. Sending first packet. Type = 0")
         self.transport.write(response_bytes)
-
-
-
-
+        self.state = 1
