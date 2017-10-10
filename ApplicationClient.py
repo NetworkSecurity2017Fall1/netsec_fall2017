@@ -68,7 +68,7 @@ if __name__ == "__main__":
         lambda: ClientProtocol("harry", "123456", "harry@gmail.com"),
         remote_address, 101)
     transport, client = loop.run_until_complete(coro)
-    print("Client Connected. Starting UI t:{}. p:{}.".format(transport, client))
+    print("Client: Connected to Client. Starting UI t:{}. p:{}.".format(transport, client))
     loop.run_forever()
     loop.close()
 
