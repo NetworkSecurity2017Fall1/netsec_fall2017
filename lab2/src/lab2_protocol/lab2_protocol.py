@@ -105,7 +105,6 @@ class PEEPClientProtocol(StackingProtocol):
                     print("PEEPServer: Lost connection to client. Cleaning up.")
                     self.transport = None
                     self.higherProtocol().connection_lost()
-            else:
                 else:
                     self.transport = None
                     break
