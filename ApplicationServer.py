@@ -63,6 +63,6 @@ if __name__ == "__main__":
     loop.set_debug(enabled=True)
     coro = getConnector("lab2_protocol").create_playground_server(lambda: ServerProtocol(), 101)
     server = loop.run_until_complete(coro)
-    print("Server: Server Started at {}".format(server.sockets[0].gethostname()))
+    print("Server: Server started at {}".format(server.sockets[0].gethostname()))
     loop.run_forever()
     loop.close()
