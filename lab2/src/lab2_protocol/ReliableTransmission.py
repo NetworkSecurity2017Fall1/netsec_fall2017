@@ -5,30 +5,30 @@ import random
 
 
 class ReliableTransmission:
-    def __init__(self):
+    def __init__(self, seq):
         self.pktReceived = []
         self.WindowSize = 5
+        self.curr = 0
+        self.next = seq
 
-    def slidingWindowExamine(self):
-        self.sortPacketBySeqNum()
-        print(self.pktReceived[-1].SequenceNumber - self.pktReceived[0].SequenceNumber)
-        if self.pktReceived[-1].SequenceNumber - self.pktReceived[0].SequenceNumber == self.WindowSize-1:
-            return 0, self.pktReceived
-        else:
-            missingNumber = []
-            seqNum = self.pktReceived[0].SequenceNumber
-            for pkt in self.pktReceived:
-                if seqNum != pkt.SequenceNumber:
-                    missingNumber.append(seqNum)
-                seqNum += 1
-            return 2, missingNumber
+    # def slidingWindowExamine(self):
+    #     if self.pktReceived[self.curr].SequenceNumber - self.pktReceived[self.curr + 5].SequenceNumber == self.WindowSize-1:
+    #         return 0, self.pktReceived
+    #     else:
+    #         missingNumber = []
+    #         seqNum = self.pktReceived[0].SequenceNumber
+    #         for pkt in self.pktReceived:
+    #             if seqNum != pkt.SequenceNumber:
+    #                 missingNumber.append(seqNum)
+    #             seqNum += 1
+    #         return 2, missingNumber
 
     def addPackets2Queue(self, packet):
         self.pktReceived.append(packet)
-        if len(self.pktReceived) == self.WindowSize:
-            return self.slidingWindowExamine()
-        else:
-            return 1, self.pktReceived
+        self.sortPacketBySeqNum()
+        if packet.SequenceNumber == self.next:
+            return True
+
 
     def sortPacketBySeqNum(self):
         self.pktReceived.sort(key=lambda pkt: pkt.SequenceNumber, reverse=False)
