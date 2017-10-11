@@ -25,7 +25,7 @@ class PEEPServerProtocol(StackingProtocol):
                     self.state = 1
                     packet_response = Packets.PEEPPacket()
                     packet_response.Type = 1
-                    packet_response.SequenceNumber = 1
+                    packet_response.SequenceNumber = 1  # sequence number is not randomly generated yet
                     packet_response.Acknowledgement = pkt.SequenceNumber + 1
                     packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
@@ -103,8 +103,8 @@ class PEEPClientProtocol(StackingProtocol):
                 elif pkt.get_type_string() == "RIP":
                     packet_response = Packets.PEEPPacket()
                     packet_response.Type = 4
-                    packet_response.SequenceNumber = 0
-                    packet_response.Acknowledgement = 0
+                    packet_response.SequenceNumber = 0  # sequence number is not randomly generated yet
+                    packet_response.Acknowledgement = 0  # why do we have acknowledgement number here
                     packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
                     self.transport.write(packet_response_bytes)
@@ -124,7 +124,7 @@ class PEEPClientProtocol(StackingProtocol):
     def handshake(self):
         packet_response = Packets.PEEPPacket()
         packet_response.Type = 0
-        packet_response.SequenceNumber = 0
+        packet_response.SequenceNumber = 0  # sequence number is not randomly generated yet
         packet_response.Checksum = packet_response.calculateChecksum()
         response_bytes = packet_response.__serialize__()
         print("PEEPClient: Starting handshake. Sending PEEP packet. Type = " + packet_response.get_type_string()
