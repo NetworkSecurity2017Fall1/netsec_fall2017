@@ -58,7 +58,7 @@ class ClientProtocol(asyncio.Protocol):
         packet.username = self.username
         packet_se = packet.__serialize__()
         self.transport.write(packet_se)
-        print("Client: Client sends CheckUsername packet.")
+        print("Client: Starting signup. Client sends CheckUsername packet.")
 
 
 if __name__ == "__main__":

@@ -40,17 +40,17 @@ class PEEPPacket(PacketType):
                                                                             self.Checksum, data_len)
     
     def calculateChecksum(self):
-        old_checksum = self.Checksum
         self.Checksum = 0
         bytes = self.__serialize__()
-        self.Checksum = old_checksum
-        return zlib.adler32(bytes) & 0xffff
+        self.Checksum = zlib.adler32(bytes) & 0xffff
+        return self.Checksum
     
-    def updateChecksum(self):
-        self.Checksum = self.calculateChecksum()
-    
-    def verifyChecksum(self):
+    def is_checksum_legit(self):
         return self.Checksum == self.calculateChecksum()
+
+    def get_type(self):
+        packet_type = ["SYN", "SYN-ACK", "ACK", "RIP", "RIP-ACK", "DATA"]
+        return packet_type[self.Type]
 
 
 # PEEP Protocol Types
