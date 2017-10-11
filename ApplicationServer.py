@@ -2,7 +2,7 @@
 
 import ApplicationPackets
 import asyncio
-import lab2.src.lab2_protocol
+import lab2.src.lab2_protocol  # should be deleted when __init__.py is put under .playground/connectors
 from playground import getConnector
 from playground.network.packet import PacketType
 
@@ -44,6 +44,8 @@ class ServerProtocol(asyncio.Protocol):
                 print("Server: Server sends SignUpResult packet.")
             else:
                 print("Server: Wrong packet received on server side.")
+                self.state = 0
+                self.transport = None
                 break
 
     def connection_lost(self, exc):

@@ -45,8 +45,9 @@ class ClientProtocol(asyncio.Protocol):
                 else:
                     print("Client: Failed to sign up.")
             else:
-                print(type(packet))
                 print("Client: Wrong packet received on client side.")
+                self.state = 0
+                self.transport = None
                 break
 
     def connection_lost(self, exc):
