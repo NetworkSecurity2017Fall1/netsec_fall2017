@@ -19,9 +19,9 @@ class PEEPServerProtocol(StackingProtocol):
         self.deserializer.update(data)
         for pkt in self.deserializer.nextPackets():
             if isinstance(pkt, Packets.PEEPPacket) and pkt.is_checksum_legit():
-                print("PEEPServer: Received PEEP packet from client. Type = " + pkt.get_type()
+                print("PEEPServer: Received PEEP packet from client. Type = " + pkt.get_type_string()
                       + ". Checksum =", pkt.Checksum)
-                if pkt.Type == 0 and self.state == 0:
+                if pkt.get_type_string() == "SYN" and self.state == 0:
                     self.state = 1
                     packet_response = Packets.PEEPPacket()
                     packet_response.Type = 1
@@ -29,20 +29,20 @@ class PEEPServerProtocol(StackingProtocol):
                     packet_response.Acknowledgement = pkt.SequenceNumber + 1
                     packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
-                    print("PEEPServer: Sending PEEP packet. Type = " + packet_response.get_type()
+                    print("PEEPServer: Sending PEEP packet. Type = " + packet_response.get_type_string()
                           + ". Checksum =", packet_response.Checksum)
                     self.transport.write(packet_response_bytes)
-                elif pkt.Type == 2 and self.state == 1:
+                elif pkt.get_type_string() == "ACK" and self.state == 1:
                     self.state = 2
                     # Only when handshake is completed should we call higher protocol's connection_made
                     print("PEEPServer: Handshake is completed.")
                     higher_transport = Transport.MyProtocolTransport(self.transport)
                     self.higherProtocol().connection_made(higher_transport)
-                elif pkt.Type == 5 and self.state == 2:
+                elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
                     print("PEEPServer: Data passes up PEEPServerProtocol.")
                     self.higherProtocol().data_received(pkt.Data)
-                elif pkt.Type == 3:
+                elif pkt.get_type_string() == "RIP":
                     packet_response = Packets.PEEPPacket()
                     packet_response.Type = 4
                     packet_response.SequenceNumber = 0
@@ -79,16 +79,16 @@ class PEEPClientProtocol(StackingProtocol):
         self.deserializer.update(data)
         for pkt in self.deserializer.nextPackets():
             if isinstance(pkt, Packets.PEEPPacket) and pkt.is_checksum_legit():
-                print("PEEPClient: Received PEEP packet from server. Type = " + pkt.get_type()
+                print("PEEPClient: Received PEEP packet from server. Type = " + pkt.get_type_string()
                       + ". Checksum =", pkt.Checksum)
-                if pkt.Type == 1 and self.state == 1:
+                if pkt.get_type_string() == "SYN-ACK" and self.state == 1:
                     packet_response = Packets.PEEPPacket()
                     packet_response.Type = 2
                     packet_response.Acknowledgement = pkt.SequenceNumber + 1
                     packet_response.SequenceNumber = pkt.Acknowledgement
                     packet_response.Checksum = packet_response.calculateChecksum()
                     response_bytes = packet_response.__serialize__()
-                    print("PEEPClient: Sending PEEP packet. Type = " + packet_response.get_type()
+                    print("PEEPClient: Sending PEEP packet. Type = " + packet_response.get_type_string()
                           + ". Checksum =", packet_response.Checksum)
                     self.transport.write(response_bytes)
                     self.state = 2
@@ -96,11 +96,11 @@ class PEEPClientProtocol(StackingProtocol):
                     print("PEEPClient: Handshake is completed.")
                     higher_transport = Transport.MyProtocolTransport(self.transport)
                     self.higherProtocol().connection_made(higher_transport)
-                elif pkt.Type == 5 and self.state == 2:
+                elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
                     print("PEEPClient: Data passes up PEEPClientProtocol.")
                     self.higherProtocol().data_received(pkt.Data)
-                elif pkt.Type == 3:
+                elif pkt.get_type_string() == "RIP":
                     packet_response = Packets.PEEPPacket()
                     packet_response.Type = 4
                     packet_response.SequenceNumber = 0
@@ -127,7 +127,7 @@ class PEEPClientProtocol(StackingProtocol):
         packet_response.SequenceNumber = 0
         packet_response.Checksum = packet_response.calculateChecksum()
         response_bytes = packet_response.__serialize__()
-        print("PEEPClient: Starting handshake. Sending PEEP packet. Type = " + packet_response.get_type()
+        print("PEEPClient: Starting handshake. Sending PEEP packet. Type = " + packet_response.get_type_string()
               + ". Checksum =", packet_response.Checksum)
         self.transport.write(response_bytes)
         self.state = 1

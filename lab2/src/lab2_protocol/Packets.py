@@ -48,7 +48,7 @@ class PEEPPacket(PacketType):
     def is_checksum_legit(self):
         return self.Checksum == self.calculateChecksum()
 
-    def get_type(self):
+    def get_type_string(self):
         packet_type = ["SYN", "SYN-ACK", "ACK", "RIP", "RIP-ACK", "DATA"]
         return packet_type[self.Type]
 
