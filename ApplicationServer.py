@@ -1,7 +1,8 @@
 """Application Server"""
 
-from lab2.src.lab2_protocol import Packets
+import ApplicationPackets
 import asyncio
+import lab2.src.lab2_protocol
 from playground import getConnector
 from playground.network.packet import PacketType
 
@@ -19,19 +20,19 @@ class ServerProtocol(asyncio.Protocol):
     def data_received(self, data):
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
-            if isinstance(packet, Packets.CheckUsername) and self.state == 0:
+            if isinstance(packet, ApplicationPackets.CheckUsername) and self.state == 0:
                 print("Server: Server receives CheckUsername packet.")
                 username_availability = self.check_username_availability_in_database(packet.username)
-                new_packet = Packets.UsernameAvailability()
+                new_packet = ApplicationPackets.UsernameAvailability()
                 new_packet.username_availability = username_availability
                 new_packet_se = new_packet.__serialize__()
                 self.state += 1
                 self.transport.write(new_packet_se)
                 print("Server: Server sends UsernameAvailability packet.")
-            elif isinstance(packet, Packets.SignUpRequest) and self.state == 1:
+            elif isinstance(packet, ApplicationPackets.SignUpRequest) and self.state == 1:
                 print("Server: Server receives SignUp packet.")
                 sign_up_result = self.sign_up_to_database(packet.username, packet.password, packet.email)
-                new_packet = Packets.SignUpResult()
+                new_packet = ApplicationPackets.SignUpResult()
                 if sign_up_result[0]:
                     new_packet.result = True
                     new_packet.user_id = sign_up_result[1]

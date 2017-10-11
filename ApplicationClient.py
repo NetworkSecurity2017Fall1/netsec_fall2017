@@ -1,7 +1,8 @@
 """Application Client"""
 
+import ApplicationPackets
 import asyncio
-from lab2.src.lab2_protocol import Packets
+import lab2.src.lab2_protocol
 from playground import getConnector
 from playground.network.packet import PacketType
 
@@ -23,11 +24,11 @@ class ClientProtocol(asyncio.Protocol):
     def data_received(self, data):
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
-            if isinstance(packet, Packets.UsernameAvailability) and self.state == 0:
+            if isinstance(packet, ApplicationPackets.UsernameAvailability) and self.state == 0:
                 print("Client: Client receives UsernameAvailability packet.")
                 if packet.username_availability:
                     print("Client: Username '" + self.username + "' is available.")
-                    new_packet = Packets.SignUpRequest()
+                    new_packet = ApplicationPackets.SignUpRequest()
                     new_packet.username = self.username
                     new_packet.password = self.password
                     new_packet.email = self.email
@@ -37,7 +38,7 @@ class ClientProtocol(asyncio.Protocol):
                     print("Client: Client sends SignUpRequest packet.")
                 else:
                     print("Client: Username '" + self.username + "' is unavailable.")
-            elif isinstance(packet, Packets.SignUpResult) and self.state == 1:
+            elif isinstance(packet, ApplicationPackets.SignUpResult) and self.state == 1:
                 print("Client: Client receives SignUpResult packet.")
                 if packet.result:
                     print("Client: Signed up successfully. Username is '" + self.username + "'.")
@@ -52,7 +53,7 @@ class ClientProtocol(asyncio.Protocol):
         self.transport = None
 
     def sign_up(self):
-        packet = Packets.CheckUsername()
+        packet = ApplicationPackets.CheckUsername()
         packet.username = self.username
         packet_se = packet.__serialize__()
         self.transport.write(packet_se)
