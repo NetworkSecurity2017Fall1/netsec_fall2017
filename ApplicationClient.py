@@ -1,7 +1,8 @@
 """Application Client"""
 
+import ApplicationPackets
 import asyncio
-from lab2.src.lab2_protocol import Packets
+import lab2.src.lab2_protocol  # should be deleted when __init__.py is put under .playground/connectors
 from playground import getConnector
 from playground.network.packet import PacketType
 
@@ -23,40 +24,41 @@ class ClientProtocol(asyncio.Protocol):
     def data_received(self, data):
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
-            if isinstance(packet, Packets.UsernameAvailability) and self.state == 0:
-                print("Client: Client receives UsernameAvailability packet.")
+            if isinstance(packet, ApplicationPackets.UsernameAvailability) and self.state == 0:
+                print("Client: Client received UsernameAvailability packet.")
                 if packet.username_availability:
                     print("Client: Username '" + self.username + "' is available.")
-                    new_packet = Packets.SignUpRequest()
+                    new_packet = ApplicationPackets.SignUpRequest()
                     new_packet.username = self.username
                     new_packet.password = self.password
                     new_packet.email = self.email
                     new_packet_se = new_packet.__serialize__()
                     self.state += 1
+                    print("Client: Client sending SignUpRequest packet.")
                     self.transport.write(new_packet_se)
-                    print("Client: Client sends SignUpRequest packet.")
                 else:
                     print("Client: Username '" + self.username + "' is unavailable.")
-            elif isinstance(packet, Packets.SignUpResult) and self.state == 1:
-                print("Client: Client receives SignUpResult packet.")
+            elif isinstance(packet, ApplicationPackets.SignUpResult) and self.state == 1:
+                print("Client: Client received SignUpResult packet.")
                 if packet.result:
                     print("Client: Signed up successfully. Username is '" + self.username + "'.")
                 else:
                     print("Client: Failed to sign up.")
             else:
-                print(type(packet))
                 print("Client: Wrong packet received on client side.")
+                self.state = 0
+                self.transport = None
                 break
 
     def connection_lost(self, exc):
         self.transport = None
 
     def sign_up(self):
-        packet = Packets.CheckUsername()
+        packet = ApplicationPackets.CheckUsername()
         packet.username = self.username
         packet_se = packet.__serialize__()
+        print("Client: Starting signup. Client sending CheckUsername packet.")
         self.transport.write(packet_se)
-        print("Client: Client sends CheckUsername packet.")
 
 
 if __name__ == "__main__":
@@ -68,7 +70,7 @@ if __name__ == "__main__":
         lambda: ClientProtocol("harry", "123456", "harry@gmail.com"),
         remote_address, 101)
     transport, client = loop.run_until_complete(coro)
-    print("Client: Connected to Client. Starting UI t:{}. p:{}.".format(transport, client))
+    print("Client: Client started. t:{}. p:{}.".format(transport, client))
     loop.run_forever()
     loop.close()
 

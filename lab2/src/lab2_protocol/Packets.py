@@ -4,7 +4,7 @@ import zlib
 import asyncio
 import logging
 from playground.network.packet import PacketType
-from playground.network.packet.fieldtypes import UINT32, UINT8, UINT16, STRING, BUFFER, BOOL
+from playground.network.packet.fieldtypes import UINT32, UINT8, UINT16, BUFFER
 from playground.network.packet.fieldtypes.attributes import Optional
 
 # Comment out this block when you don't want to be distracted by logs
@@ -12,30 +12,6 @@ from playground.network.packet.fieldtypes.attributes import Optional
 # loop.set_debug(enabled=True)
 # logging.getLogger().setLevel(logging.NOTSET)  # this logs everything going on
 # logging.getLogger().addHandler(logging.StreamHandler())
-
-
-class CheckUsername(PacketType):
-    DEFINITION_IDENTIFIER = "CheckUsername Packet"
-    DEFINITION_VERSION = "1.0"
-    FIELDS = [("username", STRING)]
-
-
-class UsernameAvailability(PacketType):
-    DEFINITION_IDENTIFIER = "UsernameAvailability Packet"
-    DEFINITION_VERSION = "1.0"
-    FIELDS = [("username_availability", BOOL)]
-
-
-class SignUpRequest(PacketType):
-    DEFINITION_IDENTIFIER = "SignUpRequest Packet"
-    DEFINITION_VERSION = "1.0"
-    FIELDS = [("username", STRING), ("password", STRING), ("email", STRING)]
-
-
-class SignUpResult(PacketType):
-    DEFINITION_IDENTIFIER = "SignUpResult Packet"
-    DEFINITION_VERSION = "1.0"
-    FIELDS = [("result", BOOL), ("user_id", UINT32)]
 
 
 class PEEPPacket(PacketType):
@@ -50,38 +26,83 @@ class PEEPPacket(PacketType):
         ("Data", BUFFER({Optional: True}))
     ]
 
+    def __init__(self, typ=5, che=0):
+        super().__init__()
+        self.Type = typ
+        self.Checksum = che
+
+    @classmethod
+    def set_data(cls, typ, seq, ack, dat):
+        pkt = cls(typ, 0)
+        pkt.SequenceNumber = seq
+        pkt.Acknowledgement = ack
+        pkt.Data = dat
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_synack(cls, seq, ack):
+        pkt = cls(1, 0)
+        pkt.SequenceNumber = seq
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_syn(cls, seq):
+        pkt = cls(0, 0)
+        pkt.SequenceNumber = seq
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_ack(cls, ack):
+        pkt = cls(2, 0)
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_rip(cls):
+        pkt = cls(3, 0)
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_ripack(cls, ack):
+        pkt = cls(4, 0)
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
     def to_string(self):
-        seq_num = self.SequenceNumber
-        if seq_num == self.UNSET:
-            seq_num = "-"
+        return "Type = " + self.get_type_string() + ". SEQ = " + str(self.SequenceNumber) \
+               + ". ACK = " + str(self.Acknowledgement) + ". Checksum = " + str(self.Checksum)
 
-        ack_num = self.Acknowledgement
-        if ack_num == self.UNSET:
-            ack_num = "-"
-
-        data_len = self.dataoffset()
-        return "(): SEQ({}), ACK({}), Checksum({}), Data Length({})".format(self.packetType(), seq_num, ack_num,
-                                                                            self.Checksum, data_len)
-    
     def calculateChecksum(self):
-        old_checksum = self.Checksum
+        oldChecksum = self.Checksum
         self.Checksum = 0
         bytes = self.__serialize__()
-        self.Checksum = old_checksum
+        self.Checksum = oldChecksum
         return zlib.adler32(bytes) & 0xffff
     
-    def updateChecksum(self):
-        self.Checksum = self.calculateChecksum()
-    
-    def verifyChecksum(self):
+    def is_checksum_legit(self):
         return self.Checksum == self.calculateChecksum()
 
+    def get_type_string(self):
+        packet_type = ["SYN", "SYN-ACK", "ACK", "RIP", "RIP-ACK", "DATA"]
+        return packet_type[self.Type]
 
 # PEEP Protocol Types
 # -------------------
-# SYN -      TYPE 0
-# SYN-ACK -  TYPE 1
-# ACK -      TYPE 2
-# RIP -      TYPE 3
-# RIP-ACK -  TYPE 4
-# DATA -     TYPE 5
+# SYN         TYPE 0
+# SYN-ACK     TYPE 1
+# ACK         TYPE 2
+# RIP         TYPE 3
+# RIP-ACK     TYPE 4
+# DATA        TYPE 5
+
+if __name__ == "__main__":
+    packet = PEEPPacket.set_four(5, 1, 1)
+    print(packet.SequenceNumber)
+    print(packet.Acknowledgement)

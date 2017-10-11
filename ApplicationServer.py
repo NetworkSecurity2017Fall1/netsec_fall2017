@@ -1,7 +1,8 @@
 """Application Server"""
 
-from lab2.src.lab2_protocol import Packets
+import ApplicationPackets
 import asyncio
+import lab2.src.lab2_protocol  # should be deleted when __init__.py is put under .playground/connectors
 from playground import getConnector
 from playground.network.packet import PacketType
 
@@ -19,19 +20,19 @@ class ServerProtocol(asyncio.Protocol):
     def data_received(self, data):
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
-            if isinstance(packet, Packets.CheckUsername) and self.state == 0:
-                print("Server: Server receives CheckUsername packet.")
+            if isinstance(packet, ApplicationPackets.CheckUsername) and self.state == 0:
+                print("Server: Server received CheckUsername packet.")
                 username_availability = self.check_username_availability_in_database(packet.username)
-                new_packet = Packets.UsernameAvailability()
+                new_packet = ApplicationPackets.UsernameAvailability()
                 new_packet.username_availability = username_availability
                 new_packet_se = new_packet.__serialize__()
                 self.state += 1
+                print("Server: Server sending UsernameAvailability packet.")
                 self.transport.write(new_packet_se)
-                print("Server: Server sends UsernameAvailability packet.")
-            elif isinstance(packet, Packets.SignUpRequest) and self.state == 1:
-                print("Server: Server receives SignUp packet.")
+            elif isinstance(packet, ApplicationPackets.SignUpRequest) and self.state == 1:
+                print("Server: Server received SignUp packet.")
                 sign_up_result = self.sign_up_to_database(packet.username, packet.password, packet.email)
-                new_packet = Packets.SignUpResult()
+                new_packet = ApplicationPackets.SignUpResult()
                 if sign_up_result[0]:
                     new_packet.result = True
                     new_packet.user_id = sign_up_result[1]
@@ -39,10 +40,12 @@ class ServerProtocol(asyncio.Protocol):
                     new_packet.result = False
                     new_packet.user_id = 0
                 new_packet_se = new_packet.__serialize__()
+                print("Server: Server sending SignUpResult packet.")
                 self.transport.write(new_packet_se)
-                print("Server: Server sends SignUpResult packet.")
             else:
                 print("Server: Wrong packet received on server side.")
+                self.state = 0
+                self.transport = None
                 break
 
     def connection_lost(self, exc):
@@ -60,6 +63,6 @@ if __name__ == "__main__":
     loop.set_debug(enabled=True)
     coro = getConnector("lab2_protocol").create_playground_server(lambda: ServerProtocol(), 101)
     server = loop.run_until_complete(coro)
-    print("Server: Server Started at {}".format(server.sockets[0].gethostname()))
+    print("Server: Server started at {}".format(server.sockets[0].gethostname()))
     loop.run_forever()
     loop.close()
