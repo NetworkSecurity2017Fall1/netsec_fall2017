@@ -52,11 +52,8 @@ class PEEPServerProtocol(StackingProtocol):
                     print("PEEPServer: Data passes up PEEPServerProtocol.")
                     self.higherProtocol().data_received(pkt.Data)
                 elif pkt.get_type_string() == "ACK" and self.state == 2:
-<<<<<<< HEAD
                     if pkt.Acknowledgement > self.valid_sent:
                         self.valid_sent = pkt.Acknowledgement
-=======
->>>>>>> 3d6966c81bd0026056972d8797b5591348a4822e
                     continue
                 elif pkt.get_type_string() == "RIP":
                     packet_response = PEEPPacket()
@@ -126,11 +123,8 @@ class PEEPClientProtocol(StackingProtocol):
                     print("PEEPClient: Data passes up PEEPClientProtocol.")
                     self.higherProtocol().data_received(pkt.Data)
                 elif pkt.get_type_string() == "ACK" and self.state == 2:
-<<<<<<< HEAD
                     if pkt.Acknowledgement > self.valid_sent:
                         self.valid_sent = pkt.Acknowledgement
-=======
->>>>>>> 3d6966c81bd0026056972d8797b5591348a4822e
                     continue
                 elif pkt.get_type_string() == "RIP":
                     packet_response = PEEPPacket()
