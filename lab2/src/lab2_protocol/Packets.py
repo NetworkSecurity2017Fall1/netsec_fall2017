@@ -38,12 +38,13 @@ class PEEPPacket(PacketType):
         data_len = self.dataoffset()
         return "(): SEQ({}), ACK({}), Checksum({}), Data Length({})".format(self.packetType(), seq_num, ack_num,
                                                                             self.Checksum, data_len)
-    
+
     def calculateChecksum(self):
+        oldChecksum = self.Checksum
         self.Checksum = 0
         bytes = self.__serialize__()
-        self.Checksum = zlib.adler32(bytes) & 0xffff
-        return self.Checksum
+        self.Checksum = oldChecksum
+        return zlib.adler32(bytes) & 0xffff
     
     def is_checksum_legit(self):
         return self.Checksum == self.calculateChecksum()
