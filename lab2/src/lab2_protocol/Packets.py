@@ -42,7 +42,7 @@ class PEEPPacket(PacketType):
         return self.Checksum == self.calculateChecksum()
 
     def get_type_string(self):
-        packet_type = ["SYN", "SYN-ACK", "ACK", "RIP", "RIP-ACK", "DATA"]
+        packet_type = ["SYN", "SYN-ACK", "ACK", "RIP", "RIP-ACK", "DATA", "DATA-ACK"]
         return packet_type[self.Type]
 
     @staticmethod
@@ -52,9 +52,10 @@ class PEEPPacket(PacketType):
 
 # PEEP Protocol Types
 # -------------------
-# SYN -      TYPE 0
-# SYN-ACK -  TYPE 1
-# ACK -      TYPE 2
-# RIP -      TYPE 3
-# RIP-ACK -  TYPE 4
-# DATA -     TYPE 5
+# SYN         TYPE 0
+# SYN-ACK     TYPE 1
+# ACK         TYPE 2
+# RIP         TYPE 3
+# RIP-ACK     TYPE 4
+# DATA        TYPE 5
+# DATA-ACK    TYPE 6

@@ -39,8 +39,17 @@ class PEEPServerProtocol(StackingProtocol):
                     self.higherProtocol().connection_made(higher_transport)
                 elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
+                    packet_response = PEEPPacket()
+                    packet_response.Type = 6  # DATA-ACK
+                    packet_response.Acknowledgement = pkt.SequenceNumber + 1
+                    packet_response.Checksum = packet_response.calculateChecksum()
+                    packet_response_bytes = packet_response.__serialize__()
+                    print("PEEPServer: Sending PEEP packet.", packet_response.to_string())
+                    self.transport.write(packet_response_bytes)
                     print("PEEPServer: Data passes up PEEPServerProtocol.")
                     self.higherProtocol().data_received(pkt.Data)
+                elif pkt.get_type_string() == "DATA-ACK" and self.state == 2:
+                    continue
                 elif pkt.get_type_string() == "RIP":
                     packet_response = PEEPPacket()
                     packet_response.Type = 4  # RIP-ACK
@@ -95,8 +104,17 @@ class PEEPClientProtocol(StackingProtocol):
                     self.higherProtocol().connection_made(higher_transport)
                 elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
+                    packet_response = PEEPPacket()
+                    packet_response.Type = 6  # DATA-ACK
+                    packet_response.Acknowledgement = pkt.SequenceNumber + 1
+                    packet_response.Checksum = packet_response.calculateChecksum()
+                    packet_response_bytes = packet_response.__serialize__()
+                    print("PEEPServer: Sending PEEP packet.", packet_response.to_string())
+                    self.transport.write(packet_response_bytes)
                     print("PEEPClient: Data passes up PEEPClientProtocol.")
                     self.higherProtocol().data_received(pkt.Data)
+                elif pkt.get_type_string() == "DATA-ACK" and self.state == 2:
+                    continue
                 elif pkt.get_type_string() == "RIP":
                     packet_response = PEEPPacket()
                     packet_response.Type = 4  # RIP-ACK
