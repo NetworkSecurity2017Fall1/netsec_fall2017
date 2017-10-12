@@ -27,6 +27,7 @@ class PEEPPacket(PacketType):
         ("Data", BUFFER({Optional: True}))
     ]
 
+
     def to_string(self):
         return "Type = " + self.get_type_string() + ". SEQ = " + str(self.SequenceNumber) \
                + ". ACK = " + str(self.Acknowledgement) + ". Checksum = " + str(self.Checksum)
