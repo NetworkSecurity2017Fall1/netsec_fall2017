@@ -3,6 +3,7 @@
 import zlib
 import asyncio
 import logging
+import random
 from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT32, UINT8, UINT16, BUFFER
 from playground.network.packet.fieldtypes.attributes import Optional
@@ -27,17 +28,8 @@ class PEEPPacket(PacketType):
     ]
 
     def to_string(self):
-        seq_num = self.SequenceNumber
-        if seq_num == self.UNSET:
-            seq_num = "-"
-
-        ack_num = self.Acknowledgement
-        if ack_num == self.UNSET:
-            ack_num = "-"
-
-        data_len = self.dataoffset()
-        return "(): SEQ({}), ACK({}), Checksum({}), Data Length({})".format(self.packetType(), seq_num, ack_num,
-                                                                            self.Checksum, data_len)
+        return "Type = " + self.get_type_string() + ". SEQ = " + str(self.SequenceNumber) \
+               + ". ACK = " + str(self.Acknowledgement) + ". Checksum = " + str(self.Checksum)
 
     def calculateChecksum(self):
         oldChecksum = self.Checksum
@@ -53,6 +45,10 @@ class PEEPPacket(PacketType):
         packet_type = ["SYN", "SYN-ACK", "ACK", "RIP", "RIP-ACK", "DATA"]
         return packet_type[self.Type]
 
+    @staticmethod
+    def generate_random_seq_no():
+        random.seed()
+        return random.randrange(0, 100000)
 
 # PEEP Protocol Types
 # -------------------
