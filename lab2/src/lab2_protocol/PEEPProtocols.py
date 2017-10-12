@@ -1,5 +1,5 @@
 """Protocols"""
-
+import random
 from . import Transport
 from .Packets import PEEPPacket
 from playground.network.packet import PacketType
@@ -10,6 +10,8 @@ class PEEPServerProtocol(StackingProtocol):
     def __init__(self):
         self.deserializer = PacketType.Deserializer()
         self.state = 0
+        self.valid_sent = random.randint(0, 4294967295)
+        self.valid_received = 0
         super().__init__()
 
     def connection_made(self, transport):
@@ -25,7 +27,7 @@ class PEEPServerProtocol(StackingProtocol):
                     self.state = 1
                     packet_response = PEEPPacket()
                     packet_response.Type = 1  # SYN-ACK
-                    packet_response.SequenceNumber = PEEPPacket.generate_random_seq_no()
+                    packet_response.SequenceNumber = self.valid_sent
                     packet_response.Acknowledgement = pkt.SequenceNumber + 1
                     packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
@@ -36,6 +38,7 @@ class PEEPServerProtocol(StackingProtocol):
                     # Only when handshake is completed should we call higher protocol's connection_made
                     print("PEEPServer: Handshake is completed.")
                     higher_transport = Transport.MyProtocolTransport(self.transport)
+                    higher_transport.seq_start(self.valid_sent)
                     self.higherProtocol().connection_made(higher_transport)
                 elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
@@ -49,6 +52,11 @@ class PEEPServerProtocol(StackingProtocol):
                     print("PEEPServer: Data passes up PEEPServerProtocol.")
                     self.higherProtocol().data_received(pkt.Data)
                 elif pkt.get_type_string() == "ACK" and self.state == 2:
+<<<<<<< HEAD
+                    if pkt.Acknowledgement > self.valid_sent:
+                        self.valid_sent = pkt.Acknowledgement
+=======
+>>>>>>> 3d6966c81bd0026056972d8797b5591348a4822e
                     continue
                 elif pkt.get_type_string() == "RIP":
                     packet_response = PEEPPacket()
@@ -76,6 +84,8 @@ class PEEPClientProtocol(StackingProtocol):
     def __init__(self):
         self.deserializer = PacketType.Deserializer()
         self.state = 0
+        self.valid_sent = random.randint(0, 4294967295)
+        self.expecting_receive = 0
         super().__init__()
 
     def connection_made(self, transport):
@@ -95,12 +105,14 @@ class PEEPClientProtocol(StackingProtocol):
                     packet_response.SequenceNumber = pkt.Acknowledgement
                     packet_response.Checksum = packet_response.calculateChecksum()
                     response_bytes = packet_response.__serialize__()
+                    self.expecting_receive = pkt.SequenceNumber + 1
                     print("PEEPClient: Sending PEEP packet.", packet_response.to_string())
                     self.transport.write(response_bytes)
                     self.state = 2
                     # Only when handshake is completed should we call higher protocol's connection_made
                     print("PEEPClient: Handshake is completed.")
                     higher_transport = Transport.MyProtocolTransport(self.transport)
+                    higher_transport.seq_start(self.valid_sent)
                     self.higherProtocol().connection_made(higher_transport)
                 elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
@@ -114,6 +126,11 @@ class PEEPClientProtocol(StackingProtocol):
                     print("PEEPClient: Data passes up PEEPClientProtocol.")
                     self.higherProtocol().data_received(pkt.Data)
                 elif pkt.get_type_string() == "ACK" and self.state == 2:
+<<<<<<< HEAD
+                    if pkt.Acknowledgement > self.valid_sent:
+                        self.valid_sent = pkt.Acknowledgement
+=======
+>>>>>>> 3d6966c81bd0026056972d8797b5591348a4822e
                     continue
                 elif pkt.get_type_string() == "RIP":
                     packet_response = PEEPPacket()
@@ -139,7 +156,7 @@ class PEEPClientProtocol(StackingProtocol):
     def handshake(self):
         packet_response = PEEPPacket()
         packet_response.Type = 0  # SYN
-        packet_response.SequenceNumber = PEEPPacket.generate_random_seq_no()
+        packet_response.SequenceNumber = self.valid_sent
         packet_response.Checksum = packet_response.calculateChecksum()
         response_bytes = packet_response.__serialize__()
         print("PEEPClient: Starting handshake. Sending PEEP packet.", packet_response.to_string())
