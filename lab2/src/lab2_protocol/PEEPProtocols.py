@@ -41,7 +41,7 @@ class PEEPServerProtocol(StackingProtocol):
                     # Only when handshake is completed should we call higher protocol's data_received
                     packet_response = PEEPPacket()
                     packet_response.Type = 6  # DATA-ACK
-                    packet_response.Acknowledgement = pkt.SequenceNumber + 1
+                    packet_response.Acknowledgement = pkt.SequenceNumber + len(pkt.Data)
                     packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
                     print("PEEPServer: Sending PEEP packet.", packet_response.to_string())
@@ -106,7 +106,7 @@ class PEEPClientProtocol(StackingProtocol):
                     # Only when handshake is completed should we call higher protocol's data_received
                     packet_response = PEEPPacket()
                     packet_response.Type = 6  # DATA-ACK
-                    packet_response.Acknowledgement = pkt.SequenceNumber + 1
+                    packet_response.Acknowledgement = pkt.SequenceNumber + len(pkt.Data)
                     packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
                     print("PEEPServer: Sending PEEP packet.", packet_response.to_string())
