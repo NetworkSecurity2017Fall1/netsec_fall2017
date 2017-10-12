@@ -49,14 +49,28 @@ class PEEPPacket(PacketType):
         return pkt
 
     @classmethod
-    def set_syn(cls, typ, seq):
+    def set_syn(cls, seq):
         pkt = cls(0, 0)
         pkt.SequenceNumber = seq
+        pkt.Checksum = pkt.calculateChecksum()
         return pkt
 
     @classmethod
     def set_ack(cls, ack):
         pkt = cls(2, 0)
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_rip(cls):
+        pkt = cls(3, 0)
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_ripack(cls, ack):
+        pkt = cls(4, 0)
         pkt.Acknowledgement = ack
         pkt.Checksum = pkt.calculateChecksum()
         return pkt

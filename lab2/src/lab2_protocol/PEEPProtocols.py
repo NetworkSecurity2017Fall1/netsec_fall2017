@@ -44,10 +44,10 @@ class PEEPServerProtocol(StackingProtocol):
                     self.higherProtocol().connection_made(higher_transport)
                 elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
-                    packet_response = PEEPPacket()
-                    packet_response.Type = 2  # ACK
-                    packet_response.Acknowledgement = pkt.SequenceNumber + len(pkt.Data)
-                    packet_response.Checksum = packet_response.calculateChecksum()
+                    packet_response = PEEPPacket.set_ack(pkt.SequenceNumber + len(pkt.Data))
+                    #packet_response.Type = 2  # ACK
+                    #packet_response.Acknowledgement = pkt.SequenceNumber + len(pkt.Data)
+                    #packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
                     print("PEEPServer: Sending PEEP packet.", packet_response.to_string())
                     self.transport.write(packet_response_bytes)
@@ -57,11 +57,11 @@ class PEEPServerProtocol(StackingProtocol):
                     if pkt.Acknowledgement > self.valid_sent:
                         self.valid_sent = pkt.Acknowledgement
                 elif pkt.get_type_string() == "RIP":
-                    packet_response = PEEPPacket()
-                    packet_response.Type = 4  # RIP-ACK
-                    packet_response.SequenceNumber = 0
-                    packet_response.Acknowledgement = 0
-                    packet_response.Checksum = packet_response.calculateChecksum()
+                    packet_response = PEEPPacket.set_ripack(pkt.SequenceNumber+1)
+                    #packet_response.Type = 4  # RIP-ACK
+                    #packet_response.SequenceNumber = 0
+                    #packet_response.Acknowledgement = 0
+                    #packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
                     self.transport.write(packet_response_bytes)
                     print("PEEPServer: Lost connection to PEEPClient. Cleaning up.")
@@ -113,10 +113,10 @@ class PEEPClientProtocol(StackingProtocol):
                     self.higherProtocol().connection_made(higher_transport)
                 elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
-                    packet_response = PEEPPacket()
-                    packet_response.Type = 2  # ACK
-                    packet_response.Acknowledgement = pkt.SequenceNumber + len(pkt.Data)
-                    packet_response.Checksum = packet_response.calculateChecksum()
+                    packet_response = PEEPPacket.set_ack(pkt.SequenceNumber + len(pkt.Data))
+                    #packet_response.Type = 2  # ACK
+                    #packet_response.Acknowledgement = pkt.SequenceNumber + len(pkt.Data)
+                    #packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
                     print("PEEPServer: Sending PEEP packet.", packet_response.to_string())
                     self.transport.write(packet_response_bytes)
@@ -126,11 +126,11 @@ class PEEPClientProtocol(StackingProtocol):
                     if pkt.Acknowledgement > self.valid_sent:
                         self.valid_sent = pkt.Acknowledgement
                 elif pkt.get_type_string() == "RIP":
-                    packet_response = PEEPPacket()
-                    packet_response.Type = 4  # RIP-ACK
-                    packet_response.SequenceNumber = 0  # why SequenceNumber = 0
-                    packet_response.Acknowledgement = 0  # why AcknowledgementNumber = 0
-                    packet_response.Checksum = packet_response.calculateChecksum()
+                    packet_response = PEEPPacket.set_ripack(pkt.SequenceNumber+1)
+                    #packet_response.Type = 4  # RIP-ACK
+                    #packet_response.SequenceNumber = 0  # why SequenceNumber = 0
+                    #packet_response.Acknowledgement = 0  # why AcknowledgementNumber = 0
+                    #packet_response.Checksum = packet_response.calculateChecksum()
                     packet_response_bytes = packet_response.__serialize__()
                     self.transport.write(packet_response_bytes)
                     print("PEEPClient: Lost connection to PEEPServer. Cleaning up.")
@@ -147,10 +147,10 @@ class PEEPClientProtocol(StackingProtocol):
         self.higherProtocol().connection_lost()
 
     def handshake(self):
-        packet_response = PEEPPacket()
-        packet_response.Type = 0  # SYN
-        packet_response.SequenceNumber = self.valid_sent
-        packet_response.Checksum = packet_response.calculateChecksum()
+        packet_response = PEEPPacket.set_syn(self.valid_sent)
+        #packet_response.Type = 0  # SYN
+        #packet_response.SequenceNumber = self.valid_sent
+        #packet_response.Checksum = packet_response.calculateChecksum()
         response_bytes = packet_response.__serialize__()
         print("PEEPClient: Starting handshake. Sending PEEP packet.", packet_response.to_string())
         self.transport.write(response_bytes)
