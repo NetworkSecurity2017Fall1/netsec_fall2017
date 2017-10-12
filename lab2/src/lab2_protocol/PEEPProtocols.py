@@ -1,4 +1,5 @@
 """Protocols"""
+
 import random
 from . import Transport
 from .Packets import PEEPPacket
@@ -10,7 +11,8 @@ class PEEPServerProtocol(StackingProtocol):
     def __init__(self):
         self.deserializer = PacketType.Deserializer()
         self.state = 0
-        self.valid_sent = random.randint(0, 4294967295)
+        random.seed()
+        self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
         super().__init__()
 
@@ -54,7 +56,6 @@ class PEEPServerProtocol(StackingProtocol):
                 elif pkt.get_type_string() == "ACK" and self.state == 2:
                     if pkt.Acknowledgement > self.valid_sent:
                         self.valid_sent = pkt.Acknowledgement
-                    continue
                 elif pkt.get_type_string() == "RIP":
                     packet_response = PEEPPacket()
                     packet_response.Type = 4  # RIP-ACK
@@ -81,7 +82,8 @@ class PEEPClientProtocol(StackingProtocol):
     def __init__(self):
         self.deserializer = PacketType.Deserializer()
         self.state = 0
-        self.valid_sent = random.randint(0, 4294967295)
+        random.seed()
+        self.valid_sent = random.randrange(0, 4294967295)
         self.expecting_receive = 0
         super().__init__()
 
@@ -125,7 +127,6 @@ class PEEPClientProtocol(StackingProtocol):
                 elif pkt.get_type_string() == "ACK" and self.state == 2:
                     if pkt.Acknowledgement > self.valid_sent:
                         self.valid_sent = pkt.Acknowledgement
-                    continue
                 elif pkt.get_type_string() == "RIP":
                     packet_response = PEEPPacket()
                     packet_response.Type = 4  # RIP-ACK
