@@ -26,16 +26,40 @@ class PEEPPacket(PacketType):
         ("Data", BUFFER({Optional: True}))
     ]
 
-    def __init__(self, typ=5, seq=0, ack=0, che=0):
+    def __init__(self, typ=5, che=0):
         super().__init__()
         self.Type = typ
-        self.SequenceNumber = seq
-        self.Acknowledgement = ack
         self.Checksum = che
 
     @classmethod
-    def set_all(cls, typ, seq, ack):
-        return cls(typ, seq, ack, 0)
+    def set_data(cls, typ, seq, ack, dat):
+        pkt = cls(typ, 0)
+        pkt.SequenceNumber = seq
+        pkt.Acknowledgement = ack
+        pkt.Data = dat
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_synack(cls, seq, ack):
+        pkt = cls(1, 0)
+        pkt.SequenceNumber = seq
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
+
+    @classmethod
+    def set_syn(cls, typ, seq):
+        pkt = cls(0, 0)
+        pkt.SequenceNumber = seq
+        return pkt
+
+    @classmethod
+    def set_ack(cls, ack):
+        pkt = cls(2, 0)
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
 
     def to_string(self):
         return "Type = " + self.get_type_string() + ". SEQ = " + str(self.SequenceNumber) \
@@ -63,3 +87,8 @@ class PEEPPacket(PacketType):
 # RIP         TYPE 3
 # RIP-ACK     TYPE 4
 # DATA        TYPE 5
+
+if __name__ == "__main__":
+    packet = PEEPPacket.set_four(5, 1, 1)
+    print(packet.SequenceNumber)
+    print(packet.Acknowledgement)
