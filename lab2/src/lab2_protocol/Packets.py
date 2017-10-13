@@ -32,8 +32,8 @@ class PEEPPacket(PacketType):
         self.Checksum = che
 
     @classmethod
-    def set_data(cls, typ, seq, ack, dat):
-        pkt = cls(typ, 0)
+    def set_data(cls, seq, ack, dat):
+        pkt = cls(5, 0)
         pkt.SequenceNumber = seq
         pkt.Acknowledgement = ack
         pkt.Data = dat
@@ -86,7 +86,7 @@ class PEEPPacket(PacketType):
         self.Checksum = oldChecksum
         return zlib.adler32(bytes) & 0xffff
     
-    def is_checksum_legit(self):
+    def validate_checksum(self):
         return self.Checksum == self.calculateChecksum()
 
     def get_type_string(self):
