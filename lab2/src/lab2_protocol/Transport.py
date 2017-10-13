@@ -18,7 +18,6 @@ class MyProtocolTransport(StackingTransport):
             pkt = Packets.PEEPPacket()
             pkt.Type = 5
             pkt.SequenceNumber = self.seq_start + counter
-            pkt.Acknowledgement = 0
             if len(data) > chunk_size:
                 pkt.Data = data[:chunk_size]
                 data = data[chunk_size:]
@@ -33,4 +32,3 @@ class MyProtocolTransport(StackingTransport):
         # Create MyProtocolPackets
         for pkt in my_protocol_packets:
             self.lowerTransport().write(pkt.__serialize__())
-
