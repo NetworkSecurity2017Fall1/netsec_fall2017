@@ -25,7 +25,7 @@ class ClientProtocol(asyncio.Protocol):
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
             if isinstance(packet, ApplicationPackets.UsernameAvailability) and self.state == 0:
-                print("Client: Client receives UsernameAvailability packet.")
+                print("Client: Client received UsernameAvailability packet.")
                 if packet.username_availability:
                     print("Client: Username '" + self.username + "' is available.")
                     new_packet = ApplicationPackets.SignUpRequest()
@@ -34,12 +34,12 @@ class ClientProtocol(asyncio.Protocol):
                     new_packet.email = self.email
                     new_packet_se = new_packet.__serialize__()
                     self.state += 1
+                    print("Client: Client sending SignUpRequest packet.")
                     self.transport.write(new_packet_se)
-                    print("Client: Client sends SignUpRequest packet.")
                 else:
                     print("Client: Username '" + self.username + "' is unavailable.")
             elif isinstance(packet, ApplicationPackets.SignUpResult) and self.state == 1:
-                print("Client: Client receives SignUpResult packet.")
+                print("Client: Client received SignUpResult packet.")
                 if packet.result:
                     print("Client: Signed up successfully. Username is '" + self.username + "'.")
                 else:
@@ -57,8 +57,8 @@ class ClientProtocol(asyncio.Protocol):
         packet = ApplicationPackets.CheckUsername()
         packet.username = self.username
         packet_se = packet.__serialize__()
+        print("Client: Starting signup. Client sending CheckUsername packet.")
         self.transport.write(packet_se)
-        print("Client: Starting signup. Client sends CheckUsername packet.")
 
 
 if __name__ == "__main__":

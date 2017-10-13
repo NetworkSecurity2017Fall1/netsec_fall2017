@@ -31,4 +31,5 @@ class MyProtocolTransport(StackingTransport):
 
         # Create MyProtocolPackets
         for pkt in my_protocol_packets:
+            print("Sending PEEP packet.", pkt.to_string())
             self.lowerTransport().write(pkt.__serialize__())

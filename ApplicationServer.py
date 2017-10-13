@@ -21,16 +21,16 @@ class ServerProtocol(asyncio.Protocol):
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
             if isinstance(packet, ApplicationPackets.CheckUsername) and self.state == 0:
-                print("Server: Server receives CheckUsername packet.")
+                print("Server: Server received CheckUsername packet.")
                 username_availability = self.check_username_availability_in_database(packet.username)
                 new_packet = ApplicationPackets.UsernameAvailability()
                 new_packet.username_availability = username_availability
                 new_packet_se = new_packet.__serialize__()
                 self.state += 1
+                print("Server: Server sending UsernameAvailability packet.")
                 self.transport.write(new_packet_se)
-                print("Server: Server sends UsernameAvailability packet.")
             elif isinstance(packet, ApplicationPackets.SignUpRequest) and self.state == 1:
-                print("Server: Server receives SignUp packet.")
+                print("Server: Server received SignUp packet.")
                 sign_up_result = self.sign_up_to_database(packet.username, packet.password, packet.email)
                 new_packet = ApplicationPackets.SignUpResult()
                 if sign_up_result[0]:
@@ -40,8 +40,8 @@ class ServerProtocol(asyncio.Protocol):
                     new_packet.result = False
                     new_packet.user_id = 0
                 new_packet_se = new_packet.__serialize__()
+                print("Server: Server sending SignUpResult packet.")
                 self.transport.write(new_packet_se)
-                print("Server: Server sends SignUpResult packet.")
             else:
                 print("Server: Wrong packet received on server side.")
                 self.state = 0
