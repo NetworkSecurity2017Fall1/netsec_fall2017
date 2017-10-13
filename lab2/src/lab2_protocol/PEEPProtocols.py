@@ -23,7 +23,7 @@ class PEEPServerProtocol(StackingProtocol):
     def data_received(self, data):
         self.deserializer.update(data)
         for pkt in self.deserializer.nextPackets():
-            if isinstance(pkt, PEEPPacket) and pkt.is_checksum_legit():
+            if isinstance(pkt, PEEPPacket) and pkt.validate_checksum():
                 print("PEEPServer: Received PEEP packet.", pkt.to_string())
                 if pkt.get_type_string() == "SYN" and self.state == 0:
                     self.state = 1
@@ -38,6 +38,7 @@ class PEEPServerProtocol(StackingProtocol):
                     print("PEEPServer: Handshake is completed.")
                     higher_transport = Transport.MyProtocolTransport(self.transport)
                     higher_transport.seq_start(self.valid_sent)
+                    higher_transport.reset_all()
                     self.higherProtocol().connection_made(higher_transport)
                 elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
@@ -85,7 +86,7 @@ class PEEPClientProtocol(StackingProtocol):
     def data_received(self, data):
         self.deserializer.update(data)
         for pkt in self.deserializer.nextPackets():
-            if isinstance(pkt, PEEPPacket) and pkt.is_checksum_legit():
+            if isinstance(pkt, PEEPPacket) and pkt.validate_checksum():
                 print("PEEPClient: Received PEEP packet.", pkt.to_string())
                 if pkt.get_type_string() == "SYN-ACK" and self.state == 1:
                     packet_response = PEEPPacket.set_ack(pkt.SequenceNumber + 1)
@@ -99,6 +100,7 @@ class PEEPClientProtocol(StackingProtocol):
                     print("PEEPClient: Handshake is completed.")
                     higher_transport = Transport.MyProtocolTransport(self.transport)
                     higher_transport.seq_start(self.valid_sent)
+                    higher_transport.reset_all()
                     self.higherProtocol().connection_made(higher_transport)
                 elif pkt.get_type_string() == "DATA" and self.state == 2:
                     # Only when handshake is completed should we call higher protocol's data_received
