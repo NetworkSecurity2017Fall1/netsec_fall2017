@@ -1,0 +1,5 @@
+#igonre these files in git
+
+/lab2/src/lab2_protocol/__pycache__/
+/.idea/
+
