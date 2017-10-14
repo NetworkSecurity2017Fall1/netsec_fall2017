@@ -5,6 +5,7 @@ from . import Transport
 from .Packets import PEEPPacket
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol
+import sched, time
 
 
 class PEEPServerProtocol(StackingProtocol):
@@ -12,6 +13,8 @@ class PEEPServerProtocol(StackingProtocol):
         self.deserializer = PacketType.Deserializer()
         self.state = 0
         random.seed()
+        self.schedule = sched.scheduler(time.time, time.sleep)
+        self.time_limit = 0.5
         self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
         super().__init__()
@@ -63,6 +66,9 @@ class PEEPServerProtocol(StackingProtocol):
                     self.transport = None
                     break
 
+    def resend(self):
+
+
     def connection_lost(self, exc):
         print("PEEPServer: Lost connection to client. Cleaning up.")
         self.transport = None
@@ -74,6 +80,8 @@ class PEEPClientProtocol(StackingProtocol):
         random.seed()
         self.deserializer = PacketType.Deserializer()
         self.state = 0
+        self.schedule = sched.scheduler(time.time, time.sleep)
+        self.time_limit = 0.5
         self.valid_sent = random.randrange(0, 4294967295)
         self.expecting_receive = 0
         super().__init__()
