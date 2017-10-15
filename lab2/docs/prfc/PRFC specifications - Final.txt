@@ -1,4 +1,4 @@
-Network Working Group	             S. Futch, Y.Fan, Y. Jou, M. Zhang, R. H. Luo
+Network Working Group	             S. Futch, Y. Fan, Y. Jou, M. Zhang, R. H. Luo
 Playground Request for Comments: 1         JHU Network Security Fall 2017
 Category: Standards Track                               	October 2017
  
