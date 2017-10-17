@@ -31,7 +31,7 @@ class AckValidate:
 class SendAck:
 
     def __init__(self, seq):
-        self.time_limit = 0.5
+        #self.time_limit = 0.5
         self.WindowSize = 5
         self.pktReceived = []
         self.next = seq
