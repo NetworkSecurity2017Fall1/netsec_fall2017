@@ -7,14 +7,19 @@ from . import Packets
 class MyProtocolTransport(StackingTransport):
 
     def reset_all(self):
+        self.window_size = 5
         self.my_protocol_packets = []
         self.to_send = []
+        self.expected_ack = []
         self.chunk_size = 1024
 
     def mvwindow(self, n):
         while n > 0:
-            self.to_send.pop()
-            self.to_send.append([0])
+            pkt = self.my_protocol_packets[0]
+            self.to_send.pop(0)
+            self.expected_ack.pop(0)
+            self.to_send.append(pkt)
+            self.expected_ack.append(pkt.SequenceNumber + len(pkt.Data))
             self.lowerTransport().write(self.my_protocol_packets[0].__serialize__())
             self.my_protocol_packets.pop(0)
             n-=1
@@ -47,11 +52,13 @@ class MyProtocolTransport(StackingTransport):
             self.my_protocol_packets.append(pkt)
 
         print("my protocol packets length: ", len(self.my_protocol_packets))
-        while(len(self.to_send) < 5 and len(self.my_protocol_packets) != 0):
-            self.to_send.append(self.my_protocol_packets[0])
+        while(len(self.to_send) < self.window_size and len(self.my_protocol_packets) != 0):
+            pkt = self.my_protocol_packets[0]
+            self.to_send.append(pkt)
+            self.expected_ack.append(pkt.SequenceNumber + len(pkt.Data))
             self.my_protocol_packets.pop(0)
 
-        # Create MyProtocolPackets
+        # send all packets in to_send[]
         for pkt in self.to_send:
             print("Sending PEEP packet.", pkt.to_string())
             self.lowerTransport().write(pkt.__serialize__())
