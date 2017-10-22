@@ -34,15 +34,12 @@ class terminationThread(threading.Thread):
         print("Exiting " + self.name)
 
 
-
-class PEEPServerProtocol(StackingProtocol):
+class PEEPProtocol(StackingProtocol):
     def __init__(self):
         self.deserializer = PacketType.Deserializer()
         self.state = 0
         self.counter = 5
         random.seed()
-        # self.schedule = sched.scheduler(time.time, time.sleep)
-        # self.time_limit = 0.5
         self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
         self.thread1 = resendThread(1, "Thread-1", self.resend)
@@ -60,6 +57,14 @@ class PEEPServerProtocol(StackingProtocol):
         while self.state!=5:
             print("Resend checking")
             time.sleep(1)
+
+    def connection_lost(self, exc):
+        print("PEEPServer: Lost connection to client. Cleaning up.")
+        self.transport = None
+        self.higherProtocol().connection_lost()
+
+
+class PEEPServerProtocol(PEEPProtocol):
 
     def connection_made(self, transport):
         print("PEEPServer: Received a connection from {}".format(transport.get_extra_info("peername")))
@@ -111,30 +116,14 @@ class PEEPServerProtocol(StackingProtocol):
                     self.transport = None
                     break
 
-    # def resend(self):
 
-
-    def connection_lost(self, exc):
-        print("PEEPServer: Lost connection to client. Cleaning up.")
-        self.transport = None
-        self.higherProtocol().connection_lost()
-
-
-
-class PEEPClientProtocol(StackingProtocol):
-    def __init__(self):
-        random.seed()
-        self.deserializer = PacketType.Deserializer()
-        self.state = 0
-        # self.schedule = sched.scheduler(time.time, time.sleep)
-        # self.time_limit = 0.5
-        self.valid_sent = random.randrange(0, 4294967295)
-        self.expecting_receive = 0
-        super().__init__()
+class PEEPClientProtocol(PEEPProtocol):
 
     def connection_made(self, transport):
         print("PEEPClient: Connection established with server")
         self.transport = transport
+        self.thread1.start()
+        self.thread2.start()
         self.handshake()
 
     def data_received(self, data):
@@ -179,10 +168,6 @@ class PEEPClientProtocol(StackingProtocol):
                     self.transport = None
                     break
 
-    def connection_lost(self, exc):
-        print("PEEPClient: Connection lost in PEEPClientProtocol")
-        self.transport = None
-        self.higherProtocol().connection_lost()
 
     def handshake(self):
         packet_response = PEEPPacket.set_syn(self.valid_sent)
