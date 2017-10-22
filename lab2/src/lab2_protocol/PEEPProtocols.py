@@ -42,8 +42,8 @@ class PEEPProtocol(StackingProtocol):
         random.seed()
         self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
-        self.thread1 = resendThread(1, "Thread-1", self.resend)
-        self.thread2 = terminationThread(1, "Thread-2", self.termination)
+        self.thread1 = resendThread(1, "resendThread", self.resend)
+        self.thread2 = terminationThread(1, "terminationThread", self.termination)
         super().__init__()
 
     def termination(self):
