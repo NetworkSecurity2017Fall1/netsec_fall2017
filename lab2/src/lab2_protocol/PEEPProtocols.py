@@ -7,7 +7,7 @@ from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol
 
 
-class myThread(threading.Thread):
+class resendThread(threading.Thread):
     def __init__(self, threadID, name, func):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -45,7 +45,7 @@ class PEEPServerProtocol(StackingProtocol):
         # self.time_limit = 0.5
         self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
-        self.thread1 = myThread(1, "Thread-1", self.resend)
+        self.thread1 = resendThread(1, "Thread-1", self.resend)
         self.thread2 = terminationThread(1, "Thread-2", self.termination)
         super().__init__()
 
