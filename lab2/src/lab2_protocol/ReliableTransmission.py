@@ -1,22 +1,21 @@
 """ReliableTransmission"""
 
-from Packets import PEEPPacket
-import random
-
+from .Packets import PEEPPacket
 
 class AckValidate:
-    def __init__(self, seq):
+    def __init__(self, transport):
         self.pktReceived = []
         self.WindowSize = 5
-        self.next = seq
+        self.transport = transport
+        self.next = transport.seq_start
 
     def addPackets2Queue(self, packet):
         shift = 0
-        if packet.SequenceNumber in range(self.next, self.next + self.WindowSize):
+        if packet.SequenceNumber in self.transport.expected_ack:
             self.pktReceived.append(packet)
             self.sortPacketBySeqNum()
         while self.pktReceived and self.pktReceived[0].SequenceNumber == self.next:
-            self.next += 1
+            self.next += len(pkt.Data)
             shift += 1
             self.pktReceived.pop(0)
 
@@ -30,15 +29,15 @@ class AckValidate:
 
 class SendAck:
 
-    def __init__(self, seq):
-        #self.time_limit = 0.5
+    def __init__(self, transport):
+        print("Reliable Transmission: Start reliable transmission")
         self.WindowSize = 5
         self.pktReceived = []
-        self.next = seq
+        self.transport = transport
 
 
     def addPackets2Queue(self, packet):
-        if packet.SequenceNumber in range(self.next, self.next + self.WindowSize):
+        if packet.SequenceNumber in self.transport.expected_ack:
             self.pktReceived.append(packet)
 
 
@@ -47,11 +46,7 @@ class SendAck:
 
     def updateAck(self):
         self.sortPacketBySeqNum()
-        while self.pktReceived and self.pktReceived[0].SequenceNumber == self.next:
-            self.next += 1
-            self.pktReceived.pop(0)
-
-        return self.next
+        return self.pktReceived
 
 
 

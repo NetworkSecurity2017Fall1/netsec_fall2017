@@ -2,6 +2,7 @@
 
 import random, threading, time
 from . import Transport
+from . import ReliableTransmission
 from .Packets import PEEPPacket
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol
@@ -44,6 +45,7 @@ class PEEPProtocol(StackingProtocol):
         self.valid_received = 0
         self.thread1 = resendThread(1, "resendThread", self.resend)
         self.thread2 = terminationThread(1, "terminationThread", self.termination)
+        self.ackReceived = []
         super().__init__()
 
     def termination(self):
@@ -54,9 +56,19 @@ class PEEPProtocol(StackingProtocol):
         self.state = 5
 
     def resend(self):
-        while self.state!=5:
+        #self.sortAckBySeqNum()
+
+        while self.state!=5 and self.state > 1:
+            expected = self.higherProtocol().transport.expected_ack
             print("Resend checking")
+            for i in range(0, len(expected)):
+                if expected[i] in self.ackReceived:
+                    print("Reliable Transmission resending ACK#: ", i)
+                    self.higherProtocol().transport.resend(i)
             time.sleep(1)
+
+    def sortAckBySeqNum(self):
+        self.ackReceived.sort(key=lambda pkt: pkt.SequenceNumber, reverse=False)
 
     def connection_lost(self, exc):
         print("PEEPServer: Lost connection to client. Cleaning up.")
@@ -97,11 +109,16 @@ class PEEPProtocol(StackingProtocol):
             self.state = 2
             # Only when handshake is completed should we call higher protocol's connection_made
             print("PEEPServer: Handshake is completed.")
+            self.ackReceived.append(pkt.Acknowledgement)
             higher_transport = Transport.MyProtocolTransport(self.transport)
             higher_transport.seq_start(self.valid_sent)
             higher_transport.reset_all()
             self.higherProtocol().connection_made(higher_transport)
         elif pkt.get_type_string() == "DATA" and self.state == 2:
+            # print(pkt.SequenceNumber, self.valid_received)
+            # if pkt.SequenceNumber == self.valid_received:
+
+            self.valid_received = pkt.SequenceNumber + len(pkt.Data)
             # Only when handshake is completed should we call higher protocol's data_received
             packet_response = PEEPPacket.set_ack(pkt.SequenceNumber + len(pkt.Data))
             packet_response_bytes = packet_response.__serialize__()
@@ -110,6 +127,7 @@ class PEEPProtocol(StackingProtocol):
             print("PEEPServer: Data passes up PEEPServerProtocol.")
             self.higherProtocol().data_received(pkt.Data)
         elif pkt.get_type_string() == "ACK" and self.state == 2:
+            elf.ackReceived.append(pkt.Acknowledgement)
             if pkt.Acknowledgement > self.valid_sent:
                 self.valid_sent = pkt.Acknowledgement
         elif pkt.get_type_string() == "RIP":
@@ -132,6 +150,7 @@ class PEEPServerProtocol(PEEPProtocol):
         self.thread2.start()
 
 
+
 class PEEPClientProtocol(PEEPProtocol):
 
     def connection_made(self, transport):
@@ -140,6 +159,7 @@ class PEEPClientProtocol(PEEPProtocol):
         self.thread1.start()
         self.thread2.start()
         self.handshake()
+
 
 
     def handshake(self):
