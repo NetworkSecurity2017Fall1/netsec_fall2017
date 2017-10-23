@@ -82,7 +82,7 @@ class PEEPProtocol(StackingProtocol):
             self.pktReceived.append(packet)
             self.sortPacketBySeqNum()
         while self.pktReceived and self.pktReceived[0].Acknowledgement == self.higherProtocol().transport.expected_ack[shift]:
-            self.valid_received = self.higherProtocol().transport.expected_ack[shift]
+            self.valid_sent = self.higherProtocol().transport.expected_ack[shift]
             shift += 1
             self.pktReceived.pop(0)
 
