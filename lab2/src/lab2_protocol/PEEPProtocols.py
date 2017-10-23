@@ -81,10 +81,8 @@ class PEEPProtocol(StackingProtocol):
         if packet.Acknowledgement in self.higherProtocol().transport.expected_ack:
             self.pktReceived.append(packet)
             self.sortPacketBySeqNum()
-        print("kkkkkkkkkkkkkkkkkkkkkkkkkk", self.pktReceived[0].Acknowledgement , self.valid_sent)
-        while self.pktReceived and self.pktReceived[0].Acknowledgement == self.valid_sent:
-            print("ffffffffffffffffffffffffffffffffffffffffffff")
-            self.valid_received += len(packet.Data)
+        while self.pktReceived and self.pktReceived[0].Acknowledgement == self.higherProtocol().transport.expected_ack[shift]:
+            self.valid_received = self.higherProtocol().transport.expected_ack[shift]
             shift += 1
             self.pktReceived.pop(0)
 
@@ -150,9 +148,7 @@ class PEEPProtocol(StackingProtocol):
         elif pkt.get_type_string() == "ACK" and self.state == 2:
             self.addAck2Queue(pkt.SequenceNumber)
             print("Expected Acknowledgement: ", self.higherProtocol().transport.expected_ack)
-            print(self.addPackets2Queue(pkt))
-            self.higherProtocol().transport.mvwindow(1)
-            print("Expected Acknowledgement: ", self.higherProtocol().transport.expected_ack)
+            self.higherProtocol().transport.mvwindow(self.addPackets2Queue(pkt))
             # if pkt.Acknowledgement > self.valid_sent:
             #     self.valid_sent = pkt.Acknowledgement
         elif pkt.get_type_string() == "RIP":

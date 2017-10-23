@@ -14,6 +14,7 @@ class MyProtocolTransport(StackingTransport):
         self.chunk_size = 1024
 
     def mvwindow(self, n):
+        print("move window ", n)
         while n > 0:
             pkt = self.my_protocol_packets[0]
             self.to_send.pop(0)
