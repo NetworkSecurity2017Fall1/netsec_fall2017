@@ -29,7 +29,7 @@ class MyProtocolTransport(StackingTransport):
         self.lowerTransport().write(self.to_send[index].__serialize__())
 
     def seq_start(self, seq):
-        self.seq_start = seq
+        self.seq_sending = seq
 
     def write(self, data):
         #self.my_protocol_packets = []
@@ -39,13 +39,13 @@ class MyProtocolTransport(StackingTransport):
         while len(data) > 0:
             pkt = Packets.PEEPPacket()
             pkt.Type = 5
-            pkt.SequenceNumber = self.seq_start
+            pkt.SequenceNumber = self.seq_sending
             if len(data) > self.chunk_size:
-                self.seq_start += self.chunk_size
+                self.seq_sending += self.chunk_size
                 pkt.Data = data[:self.chunk_size]
                 data = data[self.chunk_size:]
             else:
-                self.seq_start += len(data)
+                self.seq_sending += len(data)
                 pkt.Data = data[:len(data)]
                 data = data[len(data):]
             pkt.Checksum = pkt.calculateChecksum()
@@ -62,4 +62,4 @@ class MyProtocolTransport(StackingTransport):
         for pkt in self.to_send:
             print("Sending PEEP packet.", pkt.to_string())
             self.lowerTransport().write(pkt.__serialize__())
-            self.to_send.pop(0)
+        
