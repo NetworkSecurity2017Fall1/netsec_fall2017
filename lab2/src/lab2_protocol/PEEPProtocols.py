@@ -62,13 +62,18 @@ class PEEPProtocol(StackingProtocol):
             expected = self.higherProtocol().transport.expected_ack
             print("Resend checking")
             for i in range(0, len(expected)):
-                if expected[i] in self.ackReceived:
+                if expected[i] not in self.ackReceived:
                     print("Reliable Transmission resending ACK#: ", i)
                     self.higherProtocol().transport.resend(i)
+
             time.sleep(1)
 
     def sortAckBySeqNum(self):
         self.ackReceived.sort(key=lambda pkt: pkt.SequenceNumber, reverse=False)
+
+    def addAck2Queue(self, ack):
+        if ack in self.higherProtocol().transport.expected_ack:
+            self.ackReceived.append(ack)
 
     def connection_lost(self, exc):
         print("PEEPServer: Lost connection to client. Cleaning up.")
@@ -127,7 +132,7 @@ class PEEPProtocol(StackingProtocol):
             print("PEEPServer: Data passes up PEEPServerProtocol.")
             self.higherProtocol().data_received(pkt.Data)
         elif pkt.get_type_string() == "ACK" and self.state == 2:
-            elf.ackReceived.append(pkt.Acknowledgement)
+            self.addAck2Queue(pkt.SequenceNumber)
             if pkt.Acknowledgement > self.valid_sent:
                 self.valid_sent = pkt.Acknowledgement
         elif pkt.get_type_string() == "RIP":
