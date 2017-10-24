@@ -15,11 +15,11 @@ class MyProtocolTransport(StackingTransport):
         self.chunk_size = 1024
 
     def mvwindow(self, n):
-        print("move window ", n)
-        print("  before move expected_ack: ", self.expected_ack)
-        print("  before move to send: ", self.to_send)
+        # print("move window ", n)
+        # print("  before move expected_ack: ", self.expected_ack)
+        # print("  before move to send: ", self.to_send)
         while n > 0:
-            print("    enter first while loop")
+            # print("    enter first while loop")
             self.to_send.pop(0)
             self.expected_ack.pop(0)
             n-=1
@@ -29,8 +29,9 @@ class MyProtocolTransport(StackingTransport):
             self.expected_ack.append(pkt.SequenceNumber + len(pkt.Data))
             self.lowerTransport().write(pkt.__serialize__())
             self.my_protocol_packets.pop(0)
-        print("  after move expected_ack: ", self.expected_ack)
-        print("  after move to send: ", self.to_send)
+            print("PEEP: Sending PEEP packet.", pkt.to_string())
+        # print("  after move expected_ack: ", self.expected_ack)
+        # print("  after move to send: ", self.to_send)
 
     def close(self):
         pkt = Packets.PEEPPacket.set_rip(self.seq_sending)
@@ -40,6 +41,7 @@ class MyProtocolTransport(StackingTransport):
         print("resend: ", index)
         assert(index < 5)
         self.lowerTransport().write(self.to_send[index].__serialize__())
+        print("PEEP: Sending PEEP packet.", pkt.to_string())
 
     def seq_start(self, seq):
         self.seq_sending = seq
@@ -67,6 +69,7 @@ class MyProtocolTransport(StackingTransport):
             self.to_send.append(pkt)
             self.expected_ack.append(pkt.SequenceNumber + len(pkt.Data))
             self.my_protocol_packets.pop(0)
+            print("PEEP: Sending PEEP packet.", pkt.to_string())
 
 
         

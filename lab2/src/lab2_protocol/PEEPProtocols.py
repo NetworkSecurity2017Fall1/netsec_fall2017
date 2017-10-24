@@ -139,20 +139,21 @@ class PEEPProtocol(StackingProtocol):
             print("data length : " ,  len(pkt.Data))
             assert(pkt.SequenceNumber == self.valid_received)
             if pkt.SequenceNumber == self.valid_received:
-                self.valid_received = pkt.SequenceNumber + len(pkt.Data)
-                # Only when handshake is completed should we call higher protocol's data_received
-                packet_response = PEEPPacket.set_ack(pkt.SequenceNumber + len(pkt.Data))
-                packet_response_bytes = packet_response.__serialize__()
-                print("PEEP: Sending PEEP packet.", packet_response.to_string())
-                self.transport.write(packet_response_bytes)
+                self.valid_received = self.valid_received + len(pkt.Data)
                 print("PEEP: Data passes up PEEPServerProtocol.")
                 self.higherProtocol().data_received(pkt.Data)
+            packet_response = PEEPPacket.set_ack(self.valid_received)
+            packet_response_bytes = packet_response.__serialize__()
+            print("PEEP: Sending PEEP packet.", packet_response.to_string())
+            self.transport.write(packet_response_bytes)
+
+
         elif pkt.get_type_string() == "ACK" and self.state == 2:
             self.addAck2Queue(pkt.SequenceNumber)
             print("Expected Acknowledgement: ", self.higherProtocol().transport.expected_ack)
+            #print("shift: ", self.addPackets2Queue(pkt))
             self.higherProtocol().transport.mvwindow(self.addPackets2Queue(pkt))
-            # if pkt.Acknowledgement > self.valid_sent:
-            #     self.valid_sent = pkt.Acknowledgement
+
         elif pkt.get_type_string() == "RIP":
             packet_response = PEEPPacket.set_ripack(pkt.SequenceNumber + 1)
             packet_response_bytes = packet_response.__serialize__()
