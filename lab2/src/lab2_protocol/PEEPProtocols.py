@@ -136,6 +136,7 @@ class PEEPProtocol(StackingProtocol):
             self.higherProtocol().connection_made(higher_transport)
         elif pkt.get_type_string() == "DATA" and self.state == 2:
             print(pkt.SequenceNumber, self.valid_received)
+            assert(pkt.SequenceNumber == self.valid_received)
             if pkt.SequenceNumber == self.valid_received:
                 self.valid_received = pkt.SequenceNumber + len(pkt.Data)
                 # Only when handshake is completed should we call higher protocol's data_received
