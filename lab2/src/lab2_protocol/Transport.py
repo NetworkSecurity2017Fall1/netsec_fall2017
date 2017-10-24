@@ -25,6 +25,10 @@ class MyProtocolTransport(StackingTransport):
             self.my_protocol_packets.pop(0)
             n-=1
 
+    def close(self):
+        pkt = Packets.PEEPPacket.set_rip(self.seq_sending)
+        self.my_protocol_packets.append(pkt)
+
     def resend(self, index):
         assert(index < 5)
         self.lowerTransport().write(self.to_send[index].__serialize__())

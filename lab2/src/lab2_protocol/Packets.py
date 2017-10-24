@@ -63,8 +63,9 @@ class PEEPPacket(PacketType):
         return pkt
 
     @classmethod
-    def set_rip(cls):
+    def set_rip(cls, seq):
         pkt = cls(3, 0)
+        pkt.SequenceNumber = seq
         pkt.Checksum = pkt.calculateChecksum()
         return pkt
 
