@@ -37,7 +37,7 @@ class terminationThread(threading.Thread):
 
 class PEEPProtocol(StackingProtocol):
     def __init__(self):
-        self.deserializer = PacketType.Deserializer()
+        self.deserializer = PEEPPacket.Deserializer()
         self.state = 0
         self.counter = 5
         random.seed()
@@ -157,7 +157,7 @@ class PEEPProtocol(StackingProtocol):
             self.transport.write(packet_response_bytes)
             print("PEEPServer: Lost connection to PEEPClient. Cleaning up.")
             self.state = 4
-            self.transport = None
+            self.transport.close()
         else:
             self.state = 5
             self.transport = None
