@@ -15,7 +15,7 @@ class MyProtocolTransport(StackingTransport):
 
     def mvwindow(self, n):
         print("move window ", n)
-        while n > 0:
+        while n > 0 and len(self.my_protocol_packets.pop(0)) > 0:
             pkt = self.my_protocol_packets[0]
             self.to_send.pop(0)
             self.expected_ack.pop(0)

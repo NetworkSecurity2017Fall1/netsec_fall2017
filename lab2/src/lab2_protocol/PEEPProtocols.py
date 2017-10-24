@@ -21,18 +21,18 @@ class resendThread(threading.Thread):
         print("Exiting " + self.name)
 
 
-class terminationThread(threading.Thread):
-    def __init__(self, threadID, name, func):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.counter = 5
-        self.name = name
-        self.func = func
-
-    def run(self):
-        print("Starting " + self.name)
-        self.func()
-        print("Exiting " + self.name)
+# class terminationThread(threading.Thread):
+#     def __init__(self, threadID, name, func):
+#         threading.Thread.__init__(self)
+#         self.threadID = threadID
+#         self.counter = 5
+#         self.name = name
+#         self.func = func
+#
+#     def run(self):
+#         print("Starting " + self.name)
+#         self.func()
+#         print("Exiting " + self.name)
 
 
 class PEEPProtocol(StackingProtocol):
@@ -44,7 +44,7 @@ class PEEPProtocol(StackingProtocol):
         self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
         self.thread1 = resendThread(1, "resendThread", self.resend)
-        self.thread2 = terminationThread(1, "terminationThread", self.termination)
+        #self.thread2 = terminationThread(1, "terminationThread", self.termination)
         self.ackReceived = []
         self.pktReceived = []
         super().__init__()
@@ -168,7 +168,7 @@ class PEEPServerProtocol(PEEPProtocol):
         print("PEEPServer: Received a connection from {}".format(transport.get_extra_info("peername")))
         self.transport = transport
         self.thread1.start()
-        self.thread2.start()
+        #self.thread2.start()
 
 
 
@@ -178,7 +178,7 @@ class PEEPClientProtocol(PEEPProtocol):
         print("PEEPClient: Connection established with server")
         self.transport = transport
         self.thread1.start()
-        self.thread2.start()
+        #self.thread2.start()
         self.handshake()
 
 
