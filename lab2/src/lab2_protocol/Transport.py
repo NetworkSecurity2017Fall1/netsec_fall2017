@@ -105,7 +105,7 @@ class MyProtocolTransport(StackingTransport):
 
     def resend(self):
         while self.state < 6:
-            print("self.counter: ", self.counter)
+            # print("self.counter: ", self.counter)
             if self.counter <= 0:
                 print("It has been a while, resend packets")
                 print("length of to_send: ", len(self.to_send))

@@ -83,21 +83,21 @@ class PEEPProtocol(StackingProtocol):
     #         time.sleep(1)
 
     def sortPacketBySeqNum(self):
-        self.pktReceived.sort(key=lambda pkt: pkt.Acknowledgement, reverse=False)
+        self.pktReceived.sort(key=lambda pkt: pkt.SequenceNumber, reverse=False)
 
     def addAck2Queue(self, ack):
         if ack in self.higherProtocol().transport.expected_ack:
             self.ackReceived.append(ack)
 
-    def addPackets2Queue(self, packet):
+    def ack_shift(self, packet):
+        exp_ack = self.higherProtocol().transport.expected_ack
+        if len(exp_ack) < 1:
+            return 0
         shift = -1
-        for i in range(0, 5):
-            shift = i
-            if(packet.Acknowledgement == self.higherProtocol().transport.expected_ack[i]):
-                break
+        while(shift + 1 < len(exp_ack) and packet.Acknowledgement >= exp_ack[shift+1]):
+            shift = shift + 1
         if shift != -1:
             self.valid_sent = packet.Acknowledgement
-
         return shift+1
 
 
@@ -155,22 +155,38 @@ class PEEPProtocol(StackingProtocol):
             self.higherProtocol().connection_made(higher_transport)
         elif pkt.get_type_string() == "DATA" and self.state == 2:
             print(pkt.SequenceNumber, self.valid_received)
-            print("data length : " ,  len(pkt.Data))
-            assert(pkt.SequenceNumber == self.valid_received)
+            print("data length : ", len(pkt.Data))
             if pkt.SequenceNumber == self.valid_received:
+                assert(pkt.SequenceNumber == self.valid_received)
                 self.valid_received = self.valid_received + len(pkt.Data)
-                print("PEEP: Data passes up PEEPServerProtocol.")
                 self.higherProtocol().data_received(pkt.Data)
-            packet_response = PEEPPacket.set_ack(self.valid_received)
-            packet_response_bytes = packet_response.__serialize__()
-            print("PEEP: Sending PEEP packet.", packet_response.to_string())
-            self.transport.write(packet_response_bytes)
+                print("PEEP: Data passes up PEEPServerProtocol.")
+                while(len(self.pktReceived) > 0 and self.pktReceived[0].SequenceNumber <= self.valid_received):
+                    if self.pktReceived[0].SequenceNumber < self.valid_received:
+                        self.pktReceived.pop(0)
+                    else:
+                        self.valid_received = self.valid_received + len(self.pktReceived[0].Data)
+                        self.higherProtocol().data_received(self.pktReceived[0].Data)
+                        self.pktReceived.pop(0)
+                        print("PEEP: Data passes up PEEPServerProtocol.")
+                packet_response = PEEPPacket.set_ack(self.valid_received)
+                packet_response_bytes = packet_response.__serialize__()
+                self.transport.write(packet_response_bytes)
+                print("PEEP: Sending PEEP packet.", packet_response.to_string())
+            elif pkt.SequenceNumber > self.valid_received:
+                self.pktReceived.append(pkt)
+                self.sortPacketBySeqNum()
+            else:
+                packet_response = PEEPPacket.set_ack(self.valid_received)
+                packet_response_bytes = packet_response.__serialize__()
+                self.transport.write(packet_response_bytes)
+                print("PEEP: Sending PEEP packet.", packet_response.to_string())
 
         elif pkt.get_type_string() == "ACK" and self.state == 2:
-            self.addAck2Queue(pkt.SequenceNumber)
+            #self.addAck2Queue(pkt.Acknowledgement)
             print("Expected Acknowledgement: ", self.higherProtocol().transport.expected_ack)
-            print("Shift: ", self.addPackets2Queue(pkt))
-            self.higherProtocol().transport.mvwindow(self.addPackets2Queue(pkt))
+            print("Shift: ", self.ack_shift(pkt))
+            self.higherProtocol().transport.mvwindow(self.ack_shift(pkt))
 
         elif pkt.get_type_string() == "RIP":
             print(pkt.SequenceNumber, self.valid_received)
@@ -186,12 +202,11 @@ class PEEPProtocol(StackingProtocol):
                 #self.connection_lost(None)
                 print("    Receive a RIP line 3")
                 self.state = 5
-        else:
-            print("Enter else in packet processing")
-            self.state = 5
-            if self.transport:
-                self.transport.close()
-            #self.connection_lost(None)
+        # else:
+        #     print("Enter else in packet processing")
+        #     self.state = 5
+        #     if self.transport:
+        #         self.transport.close()
 
 class PEEPServerProtocol(PEEPProtocol):
 
