@@ -8,17 +8,17 @@ from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol
 
 
-class resendThread(threading.Thread):
-    def __init__(self, threadID, name, func):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
-        self.func = func
-
-    def run(self):
-        print("Starting " + self.name)
-        self.func()
-        print("Exiting " + self.name)
+# class resendThread(threading.Thread):
+#     def __init__(self, threadID, name, func):
+#         threading.Thread.__init__(self)
+#         self.threadID = threadID
+#         self.name = name
+#         self.func = func
+#
+#     def run(self):
+#         print("Starting " + self.name)
+#         self.func()
+#         print("Exiting " + self.name)
 
 
 # class terminationThread(threading.Thread):
@@ -43,7 +43,7 @@ class PEEPProtocol(StackingProtocol):
         random.seed()
         self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
-        self.thread1 = resendThread(1, "resendThread", self.resend)
+
         #self.thread2 = terminationThread(1, "terminationThread", self.termination)
         self.ackReceived = []
         self.pktReceived = []
@@ -56,18 +56,16 @@ class PEEPProtocol(StackingProtocol):
             time.sleep(1)
         self.state = 5
 
-    def resend(self):
-        #self.sortAckBySeqNum()
-
-        while self.state!=5 and self.state > 1:
-            expected = self.higherProtocol().transport.expected_ack
-            print("Resend checking")
-            for i in range(0, len(expected)):
-                if expected[i] not in self.ackReceived:
-                    print("Reliable Transmission resending ACK#: ", i)
-                    self.higherProtocol().transport.resend(i)
-
-            time.sleep(1)
+    # def resend(self):
+    #     while self.higherProtocol().transport:
+    #         expected = self.higherProtocol().transport.expected_ack
+    #         print("Resend checking")
+    #         for i in range(0, len(expected)):
+    #             if expected[i] not in self.ackReceived:
+    #                 print("Reliable Transmission resending ACK#: ", i)
+    #                 self.higherProtocol().transport.resend(i)
+    #
+    #         time.sleep(1)
 
     def sortPacketBySeqNum(self):
         self.pktReceived.sort(key=lambda pkt: pkt.Acknowledgement, reverse=False)
@@ -90,8 +88,10 @@ class PEEPProtocol(StackingProtocol):
 
     def connection_lost(self, exc):
         print("PEEP: Lost connection to client. Cleaning up.")
-        self.transport = None
-        self.higherProtocol().connection_lost()
+        if self.transport:
+            self.transport.close()
+        if self.higherProtocol():
+            self.higherProtocol().connection_lost(None)
 
     def data_received(self, data):
         self.counter = 5
@@ -125,6 +125,7 @@ class PEEPProtocol(StackingProtocol):
             higher_transport.seq_start(self.valid_sent)
             higher_transport.reset_all()
             self.higherProtocol().connection_made(higher_transport)
+
         elif pkt.get_type_string() == "ACK" and self.state == 1:
             self.state = 2
             # Only when handshake is completed should we call higher protocol's connection_made
@@ -147,31 +148,38 @@ class PEEPProtocol(StackingProtocol):
             print("PEEP: Sending PEEP packet.", packet_response.to_string())
             self.transport.write(packet_response_bytes)
 
-
         elif pkt.get_type_string() == "ACK" and self.state == 2:
             self.addAck2Queue(pkt.SequenceNumber)
             print("Expected Acknowledgement: ", self.higherProtocol().transport.expected_ack)
-            #print("shift: ", self.addPackets2Queue(pkt))
+            print("Shift: ", self.addPackets2Queue(pkt))
             self.higherProtocol().transport.mvwindow(self.addPackets2Queue(pkt))
 
         elif pkt.get_type_string() == "RIP":
-            packet_response = PEEPPacket.set_ripack(pkt.SequenceNumber + 1)
-            packet_response_bytes = packet_response.__serialize__()
-            self.transport.write(packet_response_bytes)
-            print("PEEP: Lost connection to PEEPClient. Cleaning up.")
-            self.state = 4
-            self.transport.close()
+            print(pkt.SequenceNumber, self.valid_received)
+            if pkt.SequenceNumber == self.valid_received:
+                # print("  Receive a RIP")
+                packet_response = PEEPPacket.set_ripack(pkt.SequenceNumber + 1)
+                # print("    Receive a RIP line 1")
+                packet_response_bytes = packet_response.__serialize__()
+                # print("    Receive a RIP line 2")
+                if self.transport != None:
+                    self.transport.write(packet_response_bytes)
+                    #self.transport.close()
+                #self.connection_lost(None)
+                print("    Receive a RIP line 3")
+                self.state = 5
         else:
+            print("Enter else in packet processing")
             self.state = 5
-            self.transport = None
+            if self.transport:
+                self.transport.close()
+            #self.connection_lost(None)
 
 class PEEPServerProtocol(PEEPProtocol):
 
     def connection_made(self, transport):
         print("PEEPServer: Received a connection from {}".format(transport.get_extra_info("peername")))
         self.transport = transport
-        self.thread1.start()
-        #self.thread2.start()
 
 
 
@@ -180,8 +188,6 @@ class PEEPClientProtocol(PEEPProtocol):
     def connection_made(self, transport):
         print("PEEPClient: Connection established with server")
         self.transport = transport
-        self.thread1.start()
-        #self.thread2.start()
         self.handshake()
 
 
