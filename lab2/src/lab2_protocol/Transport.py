@@ -68,7 +68,8 @@ class MyProtocolTransport(StackingTransport):
             if pkt.Type == 3:
                 self.expected_ack.append(pkt.SequenceNumber + 1)
                 print("the packet it sends is RIP")
-
+                asyncio.get_event_loop().call_later(15, self.termination)
+                print("to_send after close", self.to_send)
             else:
                 self.expected_ack.append(pkt.SequenceNumber + len(pkt.Data))
         self.counter = 0.3
@@ -89,13 +90,14 @@ class MyProtocolTransport(StackingTransport):
             self.expected_ack.append(pkt.SequenceNumber + 1)
             self.to_send.append(pkt)
             # self.lowerTransport().close()
+            asyncio.get_event_loop().call_later(15, self.termination)
+            print("to_send after close", self.to_send)
         else:
             self.my_protocol_packets.append(pkt)
             self.state = 5
         # self.thread2 = terminationThread(1, "terminationThread", self.termination)
         # self.thread2.start()
-        asyncio.get_event_loop().call_later(15, self.termination)
-        print("to_send after close", self.to_send)
+
 
 
     def termination(self):
