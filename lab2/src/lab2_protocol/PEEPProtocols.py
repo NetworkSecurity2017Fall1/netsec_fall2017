@@ -50,12 +50,12 @@ class PEEPProtocol(StackingProtocol):
         self.pktReceived = []
         super().__init__()
 
-    def termination(self):
-        while self.counter:
-            print("Session ends in ", self.counter, " sec.")
-            self.counter = self.counter - 1
-            time.sleep(1)
-        self.state = 5
+    # def termination(self):
+    #     while self.counter:
+    #         print("Session ends in ", self.counter, " sec.")
+    #         self.counter = self.counter - 1
+    #         time.sleep(1)
+    #     self.state = 5
 
     def handshake_resend(self):
         while self.state == 1:
@@ -103,7 +103,7 @@ class PEEPProtocol(StackingProtocol):
 
     def connection_lost(self, exc):
         print("PEEP: Lost connection to client. Cleaning up.")
-        if self.transport:
+        if self.transport != None:
             self.transport.close()
         if self.higherProtocol():
             self.higherProtocol().connection_lost(None)
@@ -198,10 +198,16 @@ class PEEPProtocol(StackingProtocol):
                 # print("    Receive a RIP line 2")
                 if self.transport != None:
                     self.transport.write(packet_response_bytes)
-                    #self.transport.close()
-                #self.connection_lost(None)
-                print("    Receive a RIP line 3")
+                print("    Receive a valid RIP ")
                 self.state = 5
+
+        elif pkt.get_type_string() == "RIP-ACK":
+            print("It's RIP-ACK!!!")
+            print("Expected Acknowledgement: ", self.higherProtocol().transport.expected_ack)
+            print("Shift: ", self.ack_shift(pkt))
+            self.higherProtocol().transport.mvwindow(self.ack_shift(pkt))
+            self.transport.close()
+
         # else:
         #     print("Enter else in packet processing")
         #     self.state = 5
