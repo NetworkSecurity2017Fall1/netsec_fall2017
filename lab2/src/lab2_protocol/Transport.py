@@ -1,5 +1,5 @@
 """Transport"""
-import threading, time
+import threading, time, asyncio
 from playground.network.common import StackingTransport
 from . import Packets
 
@@ -94,17 +94,19 @@ class MyProtocolTransport(StackingTransport):
             self.state = 5
         # self.thread2 = terminationThread(1, "terminationThread", self.termination)
         # self.thread2.start()
+        asyncio.get_event_loop().call_later(15, self.termination)
         print("to_send after close", self.to_send)
 
-    # def termination(self):
-    #     counter = 30
-    #     while self.state != 6 and counter!=0:
-    #         print("Session ends in ", counter, " sec.")
-    #         counter = counter - 1
-    #         time.sleep(1)
-    #     if self.lowerTransport() != None:
-    #         self.lowerTransport().close()
-    #         print("self.lowerTransport().close()")
+
+    def termination(self):
+        # counter = 30
+        # while self.state != 6 and counter!=0:
+        #     print("Session ends in ", counter, " sec.")
+        #     counter = counter - 1
+        #     time.sleep(1)
+        if self.lowerTransport() != None:
+            self.lowerTransport().close()
+            print("self.lowerTransport().close()")
 
     def resend(self):
         while self.state < 6:
