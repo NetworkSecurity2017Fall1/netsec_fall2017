@@ -8,17 +8,17 @@ from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol
 
 
-# class resendThread(threading.Thread):
-#     def __init__(self, threadID, name, func):
-#         threading.Thread.__init__(self)
-#         self.threadID = threadID
-#         self.name = name
-#         self.func = func
-#
-#     def run(self):
-#         print("Starting " + self.name)
-#         self.func()
-#         print("Exiting " + self.name)
+class resendThread(threading.Thread):
+    def __init__(self, threadID, name, func):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.func = func
+
+    def run(self):
+        print("Starting " + self.name)
+        self.func()
+        print("Exiting " + self.name)
 
 
 # class terminationThread(threading.Thread):
@@ -43,6 +43,7 @@ class PEEPProtocol(StackingProtocol):
         random.seed()
         self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
+        self.handshake_to_send = []
 
         #self.thread2 = terminationThread(1, "terminationThread", self.termination)
         self.ackReceived = []
@@ -55,6 +56,20 @@ class PEEPProtocol(StackingProtocol):
             self.counter = self.counter - 1
             time.sleep(1)
         self.state = 5
+
+    def handshake_resend(self):
+        while self.state == 1:
+            print("self.counter: ", self.counter)
+            if self.counter <= 0:
+                print("It has been a while, restart handshake")
+                print("length of to_send: ", len(self.handshake_to_send))
+                assert(len(self.handshake_to_send) == 1)
+                self.transport.write(self.handshake_to_send[0].__serialize__())
+                print("PEEP: Sending PEEP packet.", self.handshake_to_send[0].to_string())
+                self.counter = 0.3
+            else:
+                self.counter = self.counter - 0.1
+            time.sleep(0.1)
 
     # def resend(self):
     #     while self.higherProtocol().transport:
@@ -110,6 +125,9 @@ class PEEPProtocol(StackingProtocol):
             self.valid_sent = self.valid_sent + 1
             print("PEEP: Sending PEEP packet.", packet_response.to_string())
             self.transport.write(packet_response_bytes)
+            self.handshake_to_send.append(packet_response)
+            thread1 = resendThread(1, "handshakeresendThread", self.handshake_resend)
+            thread1.start()
         elif pkt.get_type_string() == "SYN-ACK" and self.state == 1:
             self.valid_received = pkt.SequenceNumber + 1
             packet_response = PEEPPacket.set_ack(pkt.SequenceNumber + 1)
@@ -198,3 +216,6 @@ class PEEPClientProtocol(PEEPProtocol):
         print("PEEP: Starting handshake. Sending PEEP packet.", packet_response.to_string())
         self.transport.write(response_bytes)
         self.state = 1
+        self.handshake_to_send.append(packet_response)
+        thread1 = resendThread(1, "handshakeresendThread", self.handshake_resend)
+        thread1.start()
