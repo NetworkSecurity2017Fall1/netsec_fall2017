@@ -4,7 +4,7 @@ import zlib
 import asyncio
 import logging
 from playground.network.packet import PacketType
-from playground.network.packet.fieldtypes import UINT32, UINT8, UINT16, BUFFER, STRING
+from playground.network.packet.fieldtypes import UINT32, UINT8, BUFFER, STRING
 from playground.network.packet.fieldtypes.attributes import Optional
 
 
@@ -57,15 +57,6 @@ class PLSPacket(PacketType):
         packet_type = ["ClientHello", "ServerHello", "EncData"]
         return packet_type[self.Type]
 
-    # def calculateChecksum(self):
-    #     oldChecksum = self.Checksum
-    #     self.Checksum = 0
-    #     bytes = self.__serialize__()
-    #     self.Checksum = oldChecksum
-    #     return zlib.adler32(bytes) & 0xffff
-
-    # def validate_checksum(self):
-    #     return self.Checksum == self.calculateChecksum()
 
 
 
