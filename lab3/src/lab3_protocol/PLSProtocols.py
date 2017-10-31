@@ -21,20 +21,6 @@ class resendThread(threading.Thread):
         print("Exiting " + self.name)
 
 
-# class terminationThread(threading.Thread):
-#     def __init__(self, threadID, name, func):
-#         threading.Thread.__init__(self)
-#         self.threadID = threadID
-#         self.counter = 5
-#         self.name = name
-#         self.func = func
-#
-#     def run(self):
-#         print("Starting " + self.name)
-#         self.func()
-#         print("Exiting " + self.name)
-
-
 class PLSProtocol(StackingProtocol):
     def __init__(self):
         self.deserializer = PLSPacket.Deserializer()
@@ -44,18 +30,9 @@ class PLSProtocol(StackingProtocol):
         self.valid_sent = random.randrange(0, 4294967295)
         self.valid_received = 0
         self.handshake_to_send = []
-
-        #self.thread2 = terminationThread(1, "terminationThread", self.termination)
         self.ackReceived = []
         self.pktReceived = []
         super().__init__()
-
-    # def termination(self):
-    #     while self.counter:
-    #         print("Session ends in ", self.counter, " sec.")
-    #         self.counter = self.counter - 1
-    #         time.sleep(1)
-    #     self.state = 5
 
     def handshake_resend(self):
         while self.state == 1:
@@ -70,17 +47,6 @@ class PLSProtocol(StackingProtocol):
             else:
                 self.counter = self.counter - 0.1
             time.sleep(0.1)
-
-    # def resend(self):
-    #     while self.higherProtocol().transport:
-    #         expected = self.higherProtocol().transport.expected_ack
-    #         print("Resend checking")
-    #         for i in range(0, len(expected)):
-    #             if expected[i] not in self.ackReceived:
-    #                 print("Reliable Transmission resending ACK#: ", i)
-    #                 self.higherProtocol().transport.resend(i)
-    #
-    #         time.sleep(1)
 
     def sortPacketBySeqNum(self):
         self.pktReceived.sort(key=lambda pkt: pkt.SequenceNumber, reverse=False)
@@ -208,11 +174,6 @@ class PLSProtocol(StackingProtocol):
             self.higherProtocol().transport.mvwindow(self.ack_shift(pkt))
             self.transport.close()
 
-        # else:
-        #     print("Enter else in packet processing")
-        #     self.state = 5
-        #     if self.transport:
-        #         self.transport.close()
 
 class PLSServerProtocol(PLSProtocol):
 

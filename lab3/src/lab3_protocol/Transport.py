@@ -3,19 +3,6 @@ import threading, time, asyncio
 from playground.network.common import StackingTransport
 from . import Packets
 
-# class terminationThread(threading.Thread):
-#     def __init__(self, threadID, name, func):
-#         threading.Thread.__init__(self)
-#         self.threadID = threadID
-#         self.counter = 5
-#         self.name = name
-#         self.func = func
-#
-#     def run(self):
-#         print("Starting " + self.name)
-#         self.func()
-#         print("Exiting " + self.name)
-
 class resendThread(threading.Thread):
     def __init__(self, threadID, name, func):
         threading.Thread.__init__(self)
@@ -44,10 +31,6 @@ class MyProtocolTransport(StackingTransport):
         self.thread1.start()
 
     def mvwindow(self, n):
-        # print("move window ", n)
-        # print("  before move expected_ack: ", self.expected_ack)
-        # print("  before move to send: ", self.to_send)
-        # print("  before move my protocol packets: ", self.my_protocol_packets)
         self.counter = 10
         while n > 0:
             # print("    enter first while loop")
@@ -73,16 +56,12 @@ class MyProtocolTransport(StackingTransport):
             else:
                 self.expected_ack.append(pkt.SequenceNumber + len(pkt.Data))
         self.counter = 0.3
-        #
-        # print("  after move expected_ack: ", self.expected_ack)
-        # print("  after move to send: ", self.to_send)
-        # print("  before move my protocol packets: ", self.my_protocol_packets)
 
     def close(self):
-        print("Try to close transport FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ")
+        print("Try to close transport")
         if self.state != 2:
             return
-        print("The first time closing transport DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ")
+        print("The first time closing transport")
         pkt = Packets.PLSPacket.set_rip(self.seq_sending)
         if len(self.to_send) < 5 and len(self.my_protocol_packets) == 0:
             self.state = 6
@@ -95,15 +74,8 @@ class MyProtocolTransport(StackingTransport):
         else:
             self.my_protocol_packets.append(pkt)
             self.state = 5
-        # self.thread2 = terminationThread(1, "terminationThread", self.termination)
-        # self.thread2.start()
 
     def termination(self):
-        # counter = 30
-        # while self.state != 6 and counter!=0:
-        #     print("Session ends in ", counter, " sec.")
-        #     counter = counter - 1
-        #     time.sleep(1)
         if self.lowerTransport() != None:
             self.lowerTransport().close()
             print("self.lowerTransport().close()")
@@ -129,14 +101,6 @@ class MyProtocolTransport(StackingTransport):
             else:
                 self.counter = self.counter - 0.1
             time.sleep(0.1)
-
-    # def resend(self, index):
-    #     if self.state == 5:
-    #         return
-    #     print("resend: ", index)
-    #     assert(index < 5)
-    #     self.lowerTransport().write(self.to_send[index].__serialize__())
-    #     print("PLS: Sending PLS packet.", self.to_send[index].to_string())
 
     def seq_start(self, seq):
         self.seq_sending = seq
