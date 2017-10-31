@@ -81,13 +81,3 @@ class PlsClose(PacketType):
         self.Error = err
 
 
-
-# PLS Protocol Types
-# -------------------
-# SYN         TYPE 0
-# SYN-ACK     TYPE 1
-# ACK         TYPE 2
-# RIP         TYPE 3
-# RIP-ACK     TYPE 4
-# DATA        TYPE 5
-
