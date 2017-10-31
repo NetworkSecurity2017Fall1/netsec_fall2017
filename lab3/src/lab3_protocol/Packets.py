@@ -42,6 +42,7 @@ class PLSPacket(PacketType):
         pkt.Nonce = nonce
         return pkt
 
+
     @classmethod
     def set_encdata(cls, data):
         pkt = cls(2)
