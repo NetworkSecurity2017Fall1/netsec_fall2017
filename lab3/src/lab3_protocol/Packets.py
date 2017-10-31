@@ -4,7 +4,7 @@ import zlib
 import asyncio
 import logging
 from playground.network.packet import PacketType
-from playground.network.packet.fieldtypes import UINT32, UINT8, BUFFER, STRING
+from playground.network.packet.fieldtypes import UINT64, UINT8, BUFFER, STRING, LIST
 from playground.network.packet.fieldtypes.attributes import Optional
 
 
@@ -15,48 +15,70 @@ from playground.network.packet.fieldtypes.attributes import Optional
 # logging.getLogger().addHandler(logging.StreamHandler())
 
 
-class PLSPacket(PacketType):
-    DEFINITION_IDENTIFIER = "SL.Packet"
+class PlsHello(PacketType):
+    DEFINITION_IDENTIFIER = "netsecfall2017.pls.hello"
     DEFINITION_VERSION = "1.0"
     FIELDS = [
-        ("Type", UINT8),
-        ("Source", STRING({Optional: True})),
-        ("SharedKey", UINT32({Optional: True})),
-        ("Nonce", UINT32({Optional: True})),
-        ("Data", BUFFER({Optional: True}))
+        ("Nonce", UINT64),
+        ("Certs", LIST(BUFFER))
     ]
 
-    def __init__(self, typ=5):
+    def __init__(self, nonce, certs):
         super().__init__()
-        self.Type = typ
-
-    @classmethod
-    def set_clienthello(cls, nonce):
-        pkt = cls(0)
-        pkt.Nonce = nonce
-        return pkt
-
-    @classmethod
-    def set_serverhello(cls, nonce):
-        pkt = cls(1)
-        pkt.Nonce = nonce
-        return pkt
+        self.Nonce = nonce
+        self.Certs = certs
 
 
-    @classmethod
-    def set_encdata(cls, data):
-        pkt = cls(2)
-        pkt.Data = data
-        return pkt
+class PlsKeyExchange(PacketType):
+    DEFINITION_IDENTIFIER = "netsecfall2017.pls.keyexchange"
+    DEFINITION_VERSION = "1.0"
+    FIELDS = [
+        ("PreKey", BUFFER),
+        ("NoncePlusOne", BUFFER),
+    ]
 
-    def to_string(self):
-        return "Type = " + self.get_type_string() + ". Source = " + str(self.Source) \
-               + ". SharedKey = " + str(self.SharedKey) + ". Nonce = " + str(self.Nonce)
+    def __init__(self, k, n):
+        super().__init__()
+        self.PreKey = k
+        self.NoncePlusOne = n
 
-    def get_type_string(self):
-        packet_type = ["ClientHello", "ServerHello", "EncData"]
-        return packet_type[self.Type]
 
+class PlsHandshakeDone(PacketType):
+    DEFINITION_IDENTIFIER = "netsecfall2017.pls.keyexchange"
+    DEFINITION_VERSION = "1.0"
+    FIELDS = [
+        ("ValidationHash", BUFFER)
+    ]
+
+    def __init__(self, valid):
+        super().__init__()
+        self.ValidationHash = valid
+
+
+class PlsData(PacketType):
+    DEFINITION_IDENTIFIER = "netsecfall2017.pls.data"
+    DEFINITION_VERSION = "1.0"
+    FIELDS = [
+        ("Ciphertext", BUFFER),
+        ("Mac", BUFFER)
+    ]
+
+    def __init__(self, c, m):
+        super().__init__()
+        self.Ciphertext = c
+        self.Mac = m
+
+
+class PlsClose(PacketType):
+    DEFINITION_IDENTIFIER = "netsecfall2017.pls.data"
+    DEFINITION_VERSION = "1.0"
+    FIELDS = [
+        ("Error", STRING({Optional: True}))
+    ]
+
+    def __init__(self, err):
+        super().__init__()
+        self.Error = err
 
 
 
