@@ -42,9 +42,8 @@ class PlsKeyExchange(PacketType):
         self.PreKey = k
         self.NoncePlusOne = n
 
-
 class PlsHandshakeDone(PacketType):
-    DEFINITION_IDENTIFIER = "netsecfall2017.pls.keyexchange"
+    DEFINITION_IDENTIFIER = "netsecfall2017.pls.handshakedone"
     DEFINITION_VERSION = "1.0"
     FIELDS = [
         ("ValidationHash", BUFFER)
@@ -70,7 +69,7 @@ class PlsData(PacketType):
 
 
 class PlsClose(PacketType):
-    DEFINITION_IDENTIFIER = "netsecfall2017.pls.data"
+    DEFINITION_IDENTIFIER = "netsecfall2017.pls.close"
     DEFINITION_VERSION = "1.0"
     FIELDS = [
         ("Error", STRING({Optional: True}))
