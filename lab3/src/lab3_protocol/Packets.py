@@ -34,7 +34,7 @@ class PlsKeyExchange(PacketType):
     DEFINITION_VERSION = "1.0"
     FIELDS = [
         ("PreKey", BUFFER),
-        ("NoncePlusOne", BUFFER),
+        ("NoncePlusOne", UINT64),
     ]
 
     def __init__(self, k, n):
@@ -79,4 +79,9 @@ class PlsClose(PacketType):
         super().__init__()
         self.Error = err
 
-
+if __name__ == "__main__":
+    cert = []
+    Nc = 0
+    pkt = PlsHello(Nc, cert)
+    print(type(Nc) is int)
+    print(type(pkt) is PlsHello)
