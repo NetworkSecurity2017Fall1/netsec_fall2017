@@ -15,7 +15,11 @@ from playground.network.packet.fieldtypes.attributes import Optional
 # logging.getLogger().addHandler(logging.StreamHandler())
 
 
-class PlsHello(PacketType):
+class BasePacketType(PacketType):
+    DEFINITION_IDENTIFIER = "netsecfall2017.pls.basepacket"
+    DEFINITION_VERSION = "1.0"
+
+class PlsHello(BasePacketType):
     DEFINITION_IDENTIFIER = "netsecfall2017.pls.hello"
     DEFINITION_VERSION = "1.0"
     FIELDS = [
@@ -29,7 +33,7 @@ class PlsHello(PacketType):
         self.Certs = certs
 
 
-class PlsKeyExchange(PacketType):
+class PlsKeyExchange(BasePacketType):
     DEFINITION_IDENTIFIER = "netsecfall2017.pls.keyexchange"
     DEFINITION_VERSION = "1.0"
     FIELDS = [
@@ -42,7 +46,7 @@ class PlsKeyExchange(PacketType):
         self.PreKey = k
         self.NoncePlusOne = n
 
-class PlsHandshakeDone(PacketType):
+class PlsHandshakeDone(BasePacketType):
     DEFINITION_IDENTIFIER = "netsecfall2017.pls.handshakedone"
     DEFINITION_VERSION = "1.0"
     FIELDS = [
@@ -54,7 +58,7 @@ class PlsHandshakeDone(PacketType):
         self.ValidationHash = valid
 
 
-class PlsData(PacketType):
+class PlsData(BasePacketType):
     DEFINITION_IDENTIFIER = "netsecfall2017.pls.data"
     DEFINITION_VERSION = "1.0"
     FIELDS = [
@@ -68,7 +72,7 @@ class PlsData(PacketType):
         self.Mac = m
 
 
-class PlsClose(PacketType):
+class PlsClose(BasePacketType):
     DEFINITION_IDENTIFIER = "netsecfall2017.pls.close"
     DEFINITION_VERSION = "1.0"
     FIELDS = [
@@ -79,9 +83,9 @@ class PlsClose(PacketType):
         super().__init__()
         self.Error = err
 
-if __name__ == "__main__":
-    cert = []
-    Nc = 0
-    pkt = PlsHello(Nc, cert)
-    print(type(Nc) is int)
-    print(type(pkt) is PlsHello)
+# if __name__ == "__main__":
+#     cert = []
+#     Nc = 0
+#     pkt = PlsHello(Nc, cert)
+#     print(type(Nc) is int)
+#     print(type(pkt) is PlsHello)
