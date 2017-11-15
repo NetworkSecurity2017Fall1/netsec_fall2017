@@ -4,9 +4,8 @@ import zlib
 import asyncio
 import logging
 from playground.network.packet import PacketType
-from playground.network.packet.fieldtypes import UINT64, UINT8, BUFFER, STRING, LIST
+from playground.network.packet.fieldtypes import UINT32, UINT8, UINT16, BUFFER
 from playground.network.packet.fieldtypes.attributes import Optional
-
 
 # Comment out this block when you don't want to be distracted by logs
 # loop = asyncio.get_event_loop()
@@ -15,77 +14,96 @@ from playground.network.packet.fieldtypes.attributes import Optional
 # logging.getLogger().addHandler(logging.StreamHandler())
 
 
-class BasePacketType(PacketType):
-    DEFINITION_IDENTIFIER = "netsecfall2017.pls.basepacket"
+class PEEPPacket(PacketType):
+    DEFINITION_IDENTIFIER = "PEEP.Packet"
     DEFINITION_VERSION = "1.0"
-
-class PlsHello(BasePacketType):
-    DEFINITION_IDENTIFIER = "netsecfall2017.pls.hello"
-    DEFINITION_VERSION = "1.0"
+    
     FIELDS = [
-        ("Nonce", UINT64),
-        ("Certs", LIST(BUFFER))
+        ("Type", UINT8),
+        ("SequenceNumber", UINT32({Optional: True})),
+        ("Checksum", UINT16),
+        ("Acknowledgement", UINT32({Optional: True})),
+        ("Data", BUFFER({Optional: True}))
     ]
 
-    def __init__(self, nonce, certs):
+    def __init__(self, typ=5, che=0):
         super().__init__()
-        self.Nonce = nonce
-        self.Certs = certs
+        self.Type = typ
+        self.Checksum = che
 
+    @classmethod
+    def set_data(cls, seq, ack, dat):
+        pkt = cls(5, 0)
+        pkt.SequenceNumber = seq
+        pkt.Acknowledgement = ack
+        pkt.Data = dat
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
 
-class PlsKeyExchange(BasePacketType):
-    DEFINITION_IDENTIFIER = "netsecfall2017.pls.keyexchange"
-    DEFINITION_VERSION = "1.0"
-    FIELDS = [
-        ("PreKey", BUFFER),
-        ("NoncePlusOne", UINT64),
-    ]
+    @classmethod
+    def set_synack(cls, seq, ack):
+        pkt = cls(1, 0)
+        pkt.SequenceNumber = seq
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
 
-    def __init__(self, k, n):
-        super().__init__()
-        self.PreKey = k
-        self.NoncePlusOne = n
+    @classmethod
+    def set_syn(cls, seq):
+        pkt = cls(0, 0)
+        pkt.SequenceNumber = seq
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
 
-class PlsHandshakeDone(BasePacketType):
-    DEFINITION_IDENTIFIER = "netsecfall2017.pls.handshakedone"
-    DEFINITION_VERSION = "1.0"
-    FIELDS = [
-        ("ValidationHash", BUFFER)
-    ]
+    @classmethod
+    def set_ack(cls, ack):
+        pkt = cls(2, 0)
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
 
-    def __init__(self, valid):
-        super().__init__()
-        self.ValidationHash = valid
+    @classmethod
+    def set_rip(cls, seq):
+        pkt = cls(3, 0)
+        pkt.SequenceNumber = seq
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
 
+    @classmethod
+    def set_ripack(cls, ack):
+        pkt = cls(4, 0)
+        pkt.Acknowledgement = ack
+        pkt.Checksum = pkt.calculateChecksum()
+        return pkt
 
-class PlsData(BasePacketType):
-    DEFINITION_IDENTIFIER = "netsecfall2017.pls.data"
-    DEFINITION_VERSION = "1.0"
-    FIELDS = [
-        ("Ciphertext", BUFFER),
-        ("Mac", BUFFER)
-    ]
+    def to_string(self):
+        return "Type = " + self.get_type_string() + ". SEQ = " + str(self.SequenceNumber) \
+               + ". ACK = " + str(self.Acknowledgement) + ". Checksum = " + str(self.Checksum)
 
-    def __init__(self, c, m):
-        super().__init__()
-        self.Ciphertext = c
-        self.Mac = m
+    def calculateChecksum(self):
+        oldChecksum = self.Checksum
+        self.Checksum = 0
+        bytes = self.__serialize__()
+        self.Checksum = oldChecksum
+        return zlib.adler32(bytes) & 0xffff
+    
+    def validate_checksum(self):
+        return self.Checksum == self.calculateChecksum()
 
+    def get_type_string(self):
+        packet_type = ["SYN", "SYN-ACK", "ACK", "RIP", "RIP-ACK", "DATA"]
+        return packet_type[self.Type]
 
-class PlsClose(BasePacketType):
-    DEFINITION_IDENTIFIER = "netsecfall2017.pls.close"
-    DEFINITION_VERSION = "1.0"
-    FIELDS = [
-        ("Error", STRING({Optional: True}))
-    ]
+# PEEP Protocol Types
+# -------------------
+# SYN         TYPE 0
+# SYN-ACK     TYPE 1
+# ACK         TYPE 2
+# RIP         TYPE 3
+# RIP-ACK     TYPE 4
+# DATA        TYPE 5
 
-    def __init__(self, err):
-        super().__init__()
-        self.Error = err
-
-# if __name__ == "__main__":
-#     cert = []
-#     Nc = 0
-#     pkt = PlsHello(Nc, cert)
-#     print(type(Nc) is int)
-#     print(type(pkt) is PlsHello)
+if __name__ == "__main__":
+    packet = PEEPPacket.set_four(5, 1, 1)
+    print(packet.SequenceNumber)
+    print(packet.Acknowledgement)

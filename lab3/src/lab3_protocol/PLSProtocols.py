@@ -1,9 +1,10 @@
 """Protocols"""
 
-import random
-# from . import Transport, CertFactory
-# from .Packets import PlsHello, PlsKeyExchange, PlsHandshakeDone, PlsData, PlsClose, BasePacketType
-from Packets import PlsHello, PlsKeyExchange, PlsHandshakeDone, PlsData, PlsClose, BasePacketType # Should del
+from .PLSTransport import *
+from .PLSPackets import *
+# from PLSPackets import *
+# from PLSTransport import *
+import os, random
 from playground.network.common import StackingProtocol
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
@@ -12,25 +13,28 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher.PKCS1_OAEP import PKCS1OAEP_Cipher
 from Crypto.Hash import SHA
 
+fixed_key = RSA.generate(2048)
+
 
 class PLSProtocol(StackingProtocol):
     def __init__(self):
         super().__init__()
         random.seed()
         self.state = 0
-        self.nonce = random.getrandbits(64)
+        self.mynonce = random.getrandbits(64)
+        self.peernonce = 0
         self.cert = []
-        self.PreKey = b"HelloSky"  # modified after we know how to deal with cert
-        self.message_digest = b"HelloSea"
-        self.seed = b"PLS1.0"
-        self.peerpk = 123 # modified after we know how to deal with cert
-        self.mysk = 321 # modified after we know how to deal with cert
-        self.EKc = 0
-        self.EKs = 0
-        self.IVc = 0
-        self.IVs = 0
-        self.MKc = 0
-        self.MKs = 0
+        self.PreKey = os.urandom(16)  # not sure whether this should be a random number
+        self.digest = b''
+        self.seed = b'PLS1.0'
+        self.peerpk = fixed_key  # modified after we know how to deal with cert
+        self.mysk = fixed_key  # modified after we know how to deal with cert
+        self.EKc = b''
+        self.EKs = b''
+        self.IVc = b''
+        self.IVs = b''
+        self.MKc = b''
+        self.MKs = b''
         self.deserializer = BasePacketType.Deserializer()
         self.peerRsaEncrypter = PKCS1OAEP_Cipher(self.peerpk, None, None, None)
         self.myRsaDecrypter = PKCS1OAEP_Cipher(self.mysk, None, None, None)
@@ -43,51 +47,85 @@ class PLSProtocol(StackingProtocol):
             self.higherProtocol().connection_lost(None)
 
     def data_received(self, data):
-        self.counter = 5
+        print("PLS: Received data")
         self.deserializer.update(data)
+        print("PLS: Deserialize data")
         for pkt in self.deserializer.nextPackets():
-            print("PLS: Received PLS packet.", pkt.to_string())
+            print("PLS: Packet type: ", type(pkt))
             self.packet_processing(pkt)
 
     def packet_processing(self, pkt):
         if type(pkt) is PlsHello:
+            print("This packet is PlsHello")
             if self.state == 0:
                 self.state = 1
-                pkt_rsps = PlsHello(self.nonce, self.cert)
+                self.peernonce = pkt.Nonce
+                pkt_rsps = PlsHello.set(self.mynonce, self.cert)
             elif self.state == 1:
                 self.state = 2
                 encrypted_prekey = self.peerRsaEncrypter.encrypt(self.PreKey)
-                pkt_rsps = PlsKeyExchange(encrypted_prekey, pkt.Nonce + 1)
+                pkt_rsps = PlsKeyExchange.set(encrypted_prekey, pkt.Nonce + 1)
             else:
                 return
             pkt_rsps_bytes = pkt_rsps.__serialize__()
             self.transport.write(pkt_rsps_bytes)
+            self.digest = self.digest + pkt.__serialize__() + pkt_rsps_bytes
         elif type(pkt) is PlsKeyExchange:
-            if self.state == 1 and pkt.Nonce == self.nonce + 1:
+            print("This packet is PlsExchange")
+            if self.state == 1 and pkt.NoncePlusOne == self.mynonce + 1:
                 self.state = 2
                 encrypted_prekey = self.peerRsaEncrypter.encrypt(self.PreKey)
-                pkt_rsps = PlsKeyExchange(encrypted_prekey, pkt.Nonce + 1)
-            elif self.state == 2 and pkt.Nonce == self.nonce + 1:
-                self.state = 3
-                pkt_rsps = PlsHandshakeDone(self.message_digest)
-            else:
-                return
-            pkt_rsps_bytes = pkt_rsps.__serialize__()
-            self.transport.write(pkt_rsps_bytes)
-        elif type(pkt) is PlsHandshakeDone:
-            if self.state == 2:
-                self.state = 3
-                self.ctrDecrypt = Counter.new(128, initial_value=pkt.Nonce)
-                self.aesDecrypter = AES.new(0, counter=self.ctrDecrypt, mode=AES.MODE_CTR)  # key set to 0
-                pkt_rsps = PlsHandshakeDone(self.message_digest)
+                pkt_rsps = PlsKeyExchange.set(encrypted_prekey, self.peernonce + 1)
                 pkt_rsps_bytes = pkt_rsps.__serialize__()
                 self.transport.write(pkt_rsps_bytes)
-            elif self.state == 3:
-                self.ctrDecrypt = Counter.new(128, initial_value=pkt.Nonce)
-                self.aesDecrypter = AES.new(0, counter=self.ctrDecrypt, mode=AES.MODE_CTR)  # key set to 0
-                self.state = 4
+                self.digest = self.digest + pkt.__serialize__() + pkt_rsps_bytes
+                self.state = 3
+                print("Server's digest: ", self.digest)
+                pkt_rsps2 = PlsHandshakeDone.set(self.digest)
+                pkt_rsps2_bytes = pkt_rsps2.__serialize__()
+                self.transport.write(pkt_rsps2_bytes)
+            elif self.state == 2 and pkt.NoncePlusOne == self.mynonce + 1:
+                self.state = 3
+                print("Client's digest: ", self.digest)
+                self.digest = self.digest +  pkt.__serialize__() 
+                pkt_rsps = PlsHandshakeDone.set(self.digest)
+                pkt_rsps_bytes = pkt_rsps.__serialize__()
+                self.transport.write(pkt_rsps_bytes)
             else:
                 return
+        elif type(pkt) is PlsHandshakeDone:
+            print("This packet is PlsHandshakeDone")
+            if self.state == 3:
+                self.state = 4
+                self.digest_verification(pkt.ValidationHash)
+                self.key_derivation(self.seed)
+                self.ctrDecrypt = Counter.new(128, initial_value=0)
+                self.aesDecrypter = AES.new(self.EKc, counter=self.ctrDecrypt, mode=AES.MODE_CTR)  # key set to 0
+                self.higherProtocol().connection_made(PLSTransport(self.transport, 0, 0))
+                print("PLS handshake complete")
+                print("PLS handshake complete")
+                print("PLS handshake complete")
+                print("PLS handshake complete")
+                print("PLS handshake complete")
+                print("PLS handshake complete")
+            else:
+                return
+        elif type(pkt) is PlsData:
+            if self.state == 4:
+                self.higherProtocol().data_received(pkt.Ciphertext)
+
+    def digest_verification(self, digest):
+        print("PLS: Digest verification")
+        print("PLS: Digest verification")
+        print("PLS: Digest verification")
+        print("PLS: Digest verification")
+        print("PLS: Digest verification")
+        print("PLS: Digest verification")
+
+        print(digest)
+        print(self.digest)
+        if digest != self.digest:
+            self.transport.close()
 
     def key_derivation(self, seed):
         block_0 = self.sha_hash(seed)
@@ -117,15 +155,9 @@ class PLSProtocol(StackingProtocol):
         peerRsaEncrypter = PKCS1OAEP_Cipher(pk, None, None, None)
         return peerRsaEncrypter.encrypt(data)
 
-
     def cert_verification(self):
         ## verify certificate ##
         return True
-
-
-
-
-
 
 
 class PLSServerProtocol(PLSProtocol):
@@ -141,38 +173,63 @@ class PLSClientProtocol(PLSProtocol):
         self.handshake()
 
     def handshake(self):
-        pkt = PlsHello(self.nonce, self.cert)
+        pkt = PlsHello.set(self.mynonce, self.cert)
         pkt_bytes = pkt.__serialize__()
         print("PLS: Starting handshake")
         self.transport.write(pkt_bytes)
         self.state = 1
+        self.digest = pkt_bytes
 
-
-if __name__ == "__main__":
-    myprotocol = PLSProtocol()
-    peerprotocol = PLSProtocol()
+# if __name__ == "__main__":
+#     client = PLSClientProtocol()
+#     server = PLSServerProtocol()
 
     # test rsa encryption, decryption
-    key = RSA.generate(2048)
-    data = b"bye"
-    myprotocol.peerRsaEncrypter = PKCS1OAEP_Cipher(key, None, None, None)
-    peerprotocol.myRsaDecrypter = PKCS1OAEP_Cipher(key, None, None, None)
-    ciphertxt = myprotocol.peerRsaEncrypter.encrypt(data)
-    recoveredtxt = peerprotocol.myRsaDecrypter.decrypt(ciphertxt)
-    print(ciphertxt)
-    print(recoveredtxt)
+    # key = RSA.generate(2048)
+    # prekey = os.urandom(16)
+    # print(prekey)
+    # data = prekey
+    # client.peerRsaEncrypter = PKCS1OAEP_Cipher(key, None, None, None)
+    # server.myRsaDecrypter = PKCS1OAEP_Cipher(key, None, None, None)
+    # ciphertxt = client.peerRsaEncrypter.encrypt(data)
+    # recoveredtxt = server.myRsaDecrypter.decrypt(ciphertxt)
+    # print(ciphertxt)
+    # print(recoveredtxt)
 
     # test sha_hash
-    bytes = b"hello world"
-    ans = myprotocol.sha_hash(bytes)
+    # bytes = b"hello world"
+    # ans = client.sha_hash(bytes)
 
     # test key_derivation
-    myprotocol.key_derivation(myprotocol.seed)
-    print(myprotocol.EKc)
-    print(myprotocol.EKs)
-    print(myprotocol.IVc)
-    print(myprotocol.IVs)
-    print(myprotocol.MKc)
-    print(myprotocol.MKs)
+    # client.key_derivation(client.seed)
+    # print(client.EKc)
+    # print(client.EKs)
+    # print(client.IVc)
+    # print(client.IVs)
+    # print(client.MKc)
+    # print(client.MKs)
 
-    print(myprotocol.nonce)
+    # test desrializer
+    # print("Start testing desrializer  ")
+    # mynonce = 123
+    # cert = []
+    # pkt = PlsHello.set(mynonce, cert)
+    # print(pkt.Nonce)
+    # print(pkt.Certs)
+    # bytes = pkt.__serialize__()
+    # print(bytes)
+    # _deserializer = BasePacketType.Deserializer()
+    # _deserializer.update(bytes)
+    # for p in _deserializer.nextPackets():
+    #     print("There is a packet")
+    #     print("Type: ", type(p))
+    # print("End testing desrializer  ")
+
+    # test data_received()
+    # mynonce = 123
+    # cert = []
+    # pkt = PlsHello.set(mynonce, cert)
+    # server.data_received(pkt.__serialize__())
+
+
+    # print(client.mynonce)
