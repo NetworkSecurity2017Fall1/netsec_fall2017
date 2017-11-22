@@ -1,20 +1,7 @@
 """Transport"""
 import threading, time, asyncio
 from playground.network.common import StackingTransport
-from . import Packets
-
-# class terminationThread(threading.Thread):
-#     def __init__(self, threadID, name, func):
-#         threading.Thread.__init__(self)
-#         self.threadID = threadID
-#         self.counter = 5
-#         self.name = name
-#         self.func = func
-#
-#     def run(self):
-#         print("Starting " + self.name)
-#         self.func()
-#         print("Exiting " + self.name)
+from . import PEEPPackets
 
 class resendThread(threading.Thread):
     def __init__(self, threadID, name, func):
@@ -24,9 +11,9 @@ class resendThread(threading.Thread):
         self.func = func
 
     def run(self):
-        print("Starting " + self.name)
+        # print("Starting " + self.name)
         self.func()
-        print("Exiting " + self.name)
+        # print("Exiting " + self.name)
 
 
 
@@ -67,7 +54,7 @@ class MyProtocolTransport(StackingTransport):
             self.to_send.append(pkt)
             # print("      second while loop line 3")
             self.my_protocol_packets.pop(0)
-            print("PEEP: Sending PEEP packet.", pkt.to_string())
+            # print("PEEP: Sending PEEP packet.", pkt.to_string())
             if pkt.Type == 3:
                 self.expected_ack.append(pkt.SequenceNumber + 1)
                 #print("the packet it sends is RIP")
@@ -82,17 +69,17 @@ class MyProtocolTransport(StackingTransport):
         # print("  before move my protocol packets: ", self.my_protocol_packets)
 
     def close(self):
-        print("Try to close transport")
-        print("Try to close transport")
-        print("Try to close transport")
-        print("Try to close transport")
-        print("Try to close transport")
-        print("Try to close transport")
+        # print("Try to close transport")
+        # print("Try to close transport")
+        # print("Try to close transport")
+        # print("Try to close transport")
+        # print("Try to close transport")
+        # print("Try to close transport")
 
         if self.state != 2:
             return
         #print("The first time closing transport DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ")
-        pkt = Packets.PEEPPacket.set_rip(self.seq_sending)
+        pkt = PEEPPackets.PEEPPacket.set_rip(self.seq_sending)
         if len(self.to_send) < 5 and len(self.my_protocol_packets) == 0:
             self.state = 6
             self.lowerTransport().write(pkt.__serialize__())
@@ -123,19 +110,19 @@ class MyProtocolTransport(StackingTransport):
         while self.state < 6:
             # print("self.counter: ", self.counter)
             if self.counter <= 0:
-                print("It has been a while, resend packets")
-                print("length of to_send: ", len(self.to_send))
+                # print("It has been a while, resend packets")
+                # print("length of to_send: ", len(self.to_send))
                 if len(self.to_send) == 1 and self.to_send[0].Type == 3:
                     self.state = 6
                     self.lowerTransport().write(self.to_send[0].__serialize__())
-                    print("PEEP: Sending PEEP packet.", self.to_send[0].to_string())
+                    # print("PEEP: Sending PEEP packet.", self.to_send[0].to_string())
                     #print("the packet it sends is RIP")
                 elif len(self.to_send) == 0:
                     break
                 else:
                     for i in range(0, len(self.to_send)):
                         self.lowerTransport().write(self.to_send[i].__serialize__())
-                        print("PEEP: Sending PEEP packet.", self.to_send[i].to_string())
+                        # print("PEEP: Sending PEEP packet.", self.to_send[i].to_string())
                 self.counter = 0.3
             else:
                 self.counter = self.counter - 0.1
@@ -148,7 +135,7 @@ class MyProtocolTransport(StackingTransport):
         if self.state == 5:
             return
         while len(data) > 0:
-            pkt = Packets.PEEPPacket()
+            pkt = PEEPPackets.PEEPPacket()
             pkt.Type = 5
             pkt.SequenceNumber = self.seq_sending
             if len(data) > self.chunk_size:
@@ -169,7 +156,7 @@ class MyProtocolTransport(StackingTransport):
             self.to_send.append(pkt)
             self.expected_ack.append(pkt.SequenceNumber + len(pkt.Data))
             self.my_protocol_packets.pop(0)
-            print("PEEP: Sending PEEP packet.", pkt.to_string())
+            # print("PEEP: Sending PEEP packet.", pkt.to_string())
             self.counter = 0.3
 
 
