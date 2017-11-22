@@ -13,9 +13,6 @@ class PLSTransport(StackingTransport):
         print("Key in the transport: ", key)
         self.counter = Counter.new(128, initial_value=IV)
         self.aesEncrypter = AES.new(key, counter=self.counter, mode=AES.MODE_CTR)
-        ctxt = self.aesEncrypter.encrypt(b'HelloWorld')
-        pkt = PlsData.set(ctxt, b'')
-        self.lowerTransport().write(pkt.__serialize__())
 
 
     def write(self, ptxt):
