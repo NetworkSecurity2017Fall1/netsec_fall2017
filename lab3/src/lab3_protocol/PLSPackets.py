@@ -86,14 +86,3 @@ class PlsClose(BasePacketType):
         pkt.Error = err
         return pkt
 
-# if __name__ == "__main__":
-    # cert = []
-    # Nc = 0
-    # pkt = PlsHello(Nc, cert)
-    # print(type(Nc) is int)
-    # print(type(pkt) is PlsHello)
-
-    # data = b'HelloWorld'
-    # pkt = PlsData.set(data, b'')
-    # print(pkt.Ciphertext)
-    # print(pkt.Mac)
