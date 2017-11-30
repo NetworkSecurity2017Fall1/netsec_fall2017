@@ -90,11 +90,11 @@ class PLSProtocol(StackingProtocol):
                 self.transport.write(pkt_rsps_bytes)
                 self.digest = self.digest + pkt.__serialize__() + pkt_rsps_bytes
                 self.seed = self.seed + PKc + self.PreKey
-                # print("Server seed: ", self.seed)
+                print("team5 Server seed: ", self.seed)
                 self.key_derivation(self.seed, False)
                 self.state = 3
                 # print("Server's digest: ", self.digest)
-                pkt_rsps2 = PlsHandshakeDone.set(self.digest)
+                pkt_rsps2 = PlsHandshakeDone.set(self.sha_hash(self.digest))
                 pkt_rsps2_bytes = pkt_rsps2.__serialize__()
                 self.transport.write(pkt_rsps2_bytes)
             elif self.state == 2 and pkt.NoncePlusOne == self.NCm + 1:
@@ -103,9 +103,9 @@ class PLSProtocol(StackingProtocol):
                 PKs = self.rsa_dec(self.SKm, pkt.PreKey)
                 self.digest = self.digest +  pkt.__serialize__()
                 self.seed = self.seed + PKs
-                # print("Client seed: ", self.seed)
+                print("team5 Client seed: ", self.seed)
                 self.key_derivation(self.seed, True)
-                pkt_rsps = PlsHandshakeDone.set(self.digest)
+                pkt_rsps = PlsHandshakeDone.set(self.sha_hash(self.digest))
                 pkt_rsps_bytes = pkt_rsps.__serialize__()
                 self.transport.write(pkt_rsps_bytes)
             else:
@@ -129,7 +129,7 @@ class PLSProtocol(StackingProtocol):
                 self.higherProtocol().data_received(self.aesDecrypter.decrypt(pkt.Ciphertext))
 
     def digest_verification(self, digest):
-        if digest != self.digest:
+        if digest != self.sha_hash(self.digest):
             self.transport.close()
 
     def key_derivation(self, seed, role): # True is client, False is Server
@@ -145,8 +145,12 @@ class PLSProtocol(StackingProtocol):
             self.IVp = block_2[8:] + block_3[:4]
             self.MKm = block_3[4:]
             self.MKp = block_4[:16]
-            # print("Client EKm: ", self.EKm)
-            # print("Client EKp: ", self.EKp)
+            print("team5 Client EKm: ", self.EKm)
+            print("team5 Client EKp: ", self.EKp)
+            print("team5 Client IVm: ", self.IVm)
+            print("team5 Client IVp: ", self.IVp)
+            print("team5 Client MKm: ", self.MKm)
+            print("team5 Client MKp: ", self.MKp)
         else:
             self.EKp = block_0[:16]
             self.EKm = block_0[16:] + block_1[:12]
@@ -154,8 +158,12 @@ class PLSProtocol(StackingProtocol):
             self.IVm = block_2[8:] + block_3[:4]
             self.MKp = block_3[4:]
             self.MKm = block_4[:16]
-            # print("Server EKm: ", self.EKm)
-            # print("Server EKp: ", self.EKp)
+            print("team5 Server EKm: ", self.EKm)
+            print("team5 Server EKp: ", self.EKp)
+            print("team5 Server IVm: ", self.IVm)
+            print("team5 Server IVp: ", self.IVp)
+            print("team5 Server MKm: ", self.MKm)
+            print("team5 Server MKp: ", self.MKp)
 
     def sha_hash(self, data):
         hasher = SHA.new()
@@ -214,9 +222,14 @@ class PLSProtocol(StackingProtocol):
         self.cert = getCertsForAddr(address)
 
     def mac_verify(self, data, mac):
-        h = hmac.HMAC(self.MKp, hashes.SHA256(), backend=default_backend())
+        h = hmac.HMAC(self.MKp, hashes.SHA1(), backend=default_backend())
         h.update(data)
-        h.verify(mac)
+        try:
+            h.verify(mac)
+            return True
+        except Exception as e:
+            print(e)
+            return False
 
 class PLSServerProtocol(PLSProtocol):
     def connection_made(self, transport):

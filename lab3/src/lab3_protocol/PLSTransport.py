@@ -12,6 +12,9 @@ class PLSTransport(StackingTransport):
         super().__init__(lowerTransport)
         # print("IV in the transport: ", IV)
         # print("Key in the transport: ", k_enc)
+        print("team5 enc IV : ", IV)
+        print("team5 enc key: ",k_enc)
+        print("team5 mac key: ",k_mac)
         self.k_mac = k_mac
         self.counter = Counter.new(128, initial_value=IV)
         self.aesEncrypter = AES.new(k_enc, counter=self.counter, mode=AES.MODE_CTR)
@@ -23,6 +26,6 @@ class PLSTransport(StackingTransport):
         self.lowerTransport().write(pkt.__serialize__())
 
     def mac_compute(self, ctxt):
-        h = hmac.HMAC(self.k_mac, hashes.SHA256(), backend=default_backend())
+        h = hmac.HMAC(self.k_mac, hashes.SHA1(), backend=default_backend())
         h.update(ctxt)
         return h.finalize()

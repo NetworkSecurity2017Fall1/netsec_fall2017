@@ -85,7 +85,7 @@ class PEEPProtocol(StackingProtocol):
                 self.packet_processing(pkt)
 
     def packet_processing(self, pkt):
-        if pkt.get_type_string() == "SYN" and self.state == 0:
+        if pkt.Type == 0 and self.state == 0:
             self.state = 1
             self.valid_received = pkt.SequenceNumber + 1
             packet_response = PEEPPacket.set_synack(self.valid_sent, pkt.SequenceNumber + 1)
@@ -96,7 +96,7 @@ class PEEPProtocol(StackingProtocol):
             self.handshake_to_send.append(packet_response)
             thread1 = resendThread(1, "handshakeresendThread", self.handshake_resend)
             thread1.start()
-        elif pkt.get_type_string() == "SYN-ACK" and self.state == 1:
+        elif pkt.Type == 1 and self.state == 1:
             self.valid_received = pkt.SequenceNumber + 1
             packet_response = PEEPPacket.set_ack(pkt.SequenceNumber + 1)
             response_bytes = packet_response.__serialize__()
@@ -112,7 +112,7 @@ class PEEPProtocol(StackingProtocol):
             higher_transport.reset_all()
             self.higherProtocol().connection_made(higher_transport)
 
-        elif pkt.get_type_string() == "ACK" and self.state == 1:
+        elif pkt.Type == 2 and self.state == 1:
             self.state = 2
             # Only when handshake is completed should we call higher protocol's connection_made
             # print("PEEP: Handshake is completed.")
@@ -121,7 +121,7 @@ class PEEPProtocol(StackingProtocol):
             higher_transport.seq_start(self.valid_sent)
             higher_transport.reset_all()
             self.higherProtocol().connection_made(higher_transport)
-        elif pkt.get_type_string() == "DATA" and self.state == 2:
+        elif pkt.Type == 5 and self.state == 2:
             # print("incoming seq: ", pkt.SequenceNumber, "current valid received: ", self.valid_received)
             # print("data length : ", len(pkt.Data))
             if pkt.SequenceNumber == self.valid_received:
@@ -151,13 +151,13 @@ class PEEPProtocol(StackingProtocol):
                 self.transport.write(packet_response_bytes)
                 # print("PEEP: Sending PEEP packet.", packet_response.to_string())
 
-        elif pkt.get_type_string() == "ACK" and self.state == 2:
+        elif pkt.Type == 2 and self.state == 2:
             self.addAck2Queue(pkt.Acknowledgement)
             # print("Expected Acknowledgement: ", self.higherProtocol().transport.expected_ack)
             # print("Shift: ", self.ack_shift(pkt))
             self.higherProtocol().transport.mvwindow(self.ack_shift(pkt))
 
-        elif pkt.get_type_string() == "RIP":
+        elif pkt.Type == 3:
             #print(pkt.SequenceNumber, self.valid_received)
             if pkt.SequenceNumber == self.valid_received:
                 # print("  Receive a RIP")
@@ -170,7 +170,7 @@ class PEEPProtocol(StackingProtocol):
                 #print("    Receive a valid RIP ")
                 self.state = 5
 
-        elif pkt.get_type_string() == "RIP-ACK":
+        elif pkt.Type == 4:
             #print("It's RIP-ACK!!!")
             #print("Expected Acknowledgement: ", self.higherProtocol().transport.expected_ack)
             #print("Shift: ", self.ack_shift(pkt))
