@@ -2,6 +2,7 @@
 
 from .PLSTransport import *
 from .PLSPackets import *
+from .CertFactory import *
 import os, random
 from playground.network.common import StackingProtocol
 from Crypto.Cipher import AES
@@ -16,7 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-
+from cryptography.x509.oid import NameOID
 
 class PLSProtocol(StackingProtocol):
     def __init__(self):
@@ -61,12 +62,14 @@ class PLSProtocol(StackingProtocol):
             if self.state == 0:
                 self.state = 1
                 self.NCp = pkt.Nonce
+                self.cert_verification(pkt.Certs)
                 self.seed = self.seed + pkt.Nonce.to_bytes(8, byteorder='big') + self.NCm.to_bytes(8, byteorder='big')
                 self.PKp = x509.load_pem_x509_certificate(pkt.Certs[0], default_backend()).public_key()
                 pkt_rsps = PlsHello.set(self.NCm, self.cert)
             elif self.state == 1:
                 self.state = 2
                 self.NCp = pkt.Nonce
+                self.cert_verification(pkt.Certs)
                 self.seed = self.seed + pkt.Nonce.to_bytes(8, byteorder='big') + self.PreKey
                 self.PKp = x509.load_pem_x509_certificate(pkt.Certs[0], default_backend()).public_key()
                 encrypted_prekey = self.rsa_enc(self.PKp, self.PreKey)
@@ -160,13 +163,12 @@ class PLSProtocol(StackingProtocol):
         return hasher.digest()
 
     def load_sk(self, address):
-        address = os.path.join(os.path.dirname(__file__), address)
-        with open(address, "rb") as key_file:
-            self.SKm = serialization.load_pem_private_key(
-                key_file.read(),
-                password=None,
-                backend=default_backend()
-            )
+        key_bytes = getPrivateKeyForAddr("hello")
+        self.SKm = serialization.load_pem_private_key(
+            key_bytes,
+            password=None,
+            backend=default_backend()
+        )
 
     def rsa_enc(self, pk, data):
         return pk.encrypt(
@@ -186,21 +188,31 @@ class PLSProtocol(StackingProtocol):
                 label=None)
         )
 
-    def cert_verification(self):
-        ## verify certificate ##
+    def GetCommonName(self, cert):
+        commonNameList = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+        if len(commonNameList) != 1: return None
+        commonNameAttr = commonNameList[0]
+        return commonNameAttr.value
+
+    def cert_verification(self, cert_list):
+        cert = x509.load_pem_x509_certificate(cert_list[0], default_backend())
+        print(self.GetCommonName(cert))
+        print(self.transport.get_extra_info("peername")[0])
+        for i in range(1, 3):
+            print(i)
+            cert = x509.load_pem_x509_certificate(cert_list[i - 1], default_backend())
+            pk = x509.load_pem_x509_certificate(cert_list[i], default_backend()).public_key()
+            pk.verify(
+                cert.signature,
+                cert.tbs_certificate_bytes,
+                padding.PKCS1v15(),
+                hashes.SHA256()
+            )
         return True
 
-    def load_cert(self, address):
-        address = os.path.join(os.path.dirname(__file__), address)
-        with open(address + '/local.cert', 'r+b') as cert_file:
-            cert = cert_file.read()
-        with open(address + '/int.cert', 'r+b') as int_cert_file:
-            int_cert = int_cert_file.read()
-        with open(address + '/root.crt', 'r+b') as root_cert_file:
-            root_cert = root_cert_file.read()
-        self.cert.append(cert)
-        self.cert.append(int_cert)
-        self.cert.append(root_cert)
+    def load_cert(self):
+        address = "hello"
+        self.cert = getCertsForAddr(address)
 
     def mac_verify(self, data, mac):
         h = hmac.HMAC(self.MKp, hashes.SHA256(), backend=default_backend())
@@ -211,7 +223,7 @@ class PLSServerProtocol(PLSProtocol):
     def connection_made(self, transport):
         # print("PLSServer: Received a connection from {}".format(transport.get_extra_info("peername")))
         self.transport = transport
-        self.load_cert('server_certificate')
+        self.load_cert()
         self.load_sk('server_certificate/local.key')
 
 
@@ -219,7 +231,7 @@ class PLSClientProtocol(PLSProtocol):
     def connection_made(self, transport):
         # print("PLSClient: Connection established with server")
         self.transport = transport
-        self.load_cert('client_certificate')
+        self.load_cert()
         self.load_sk('client_certificate/local.key')
         self.handshake()
 
