@@ -7,11 +7,8 @@ import os, random
 from playground.network.common import StackingProtocol
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
-from Crypto.Signature import PKCS1_v1_5
 from Crypto.PublicKey import RSA
-from Crypto.Cipher.PKCS1_OAEP import PKCS1OAEP_Cipher
 from Crypto.Hash import SHA
-from OpenSSL import crypto
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
@@ -127,10 +124,9 @@ class PLSProtocol(StackingProtocol):
             if self.state == 4:
                 self.mac_verify(pkt.Ciphertext, pkt.Mac)
                 self.higherProtocol().data_received(self.aesDecrypter.decrypt(pkt.Ciphertext))
+        elif type(pkt) is PlsClose:
+            print("team5 received error message: ", pkt.Error)
 
-    def digest_verification(self, digest):
-        if digest != self.sha_hash(self.digest):
-            self.transport.close()
 
     def key_derivation(self, seed, role): # True is client, False is Server
         block_0 = self.sha_hash(seed)
@@ -165,18 +161,22 @@ class PLSProtocol(StackingProtocol):
             print("team5 Server MKm: ", self.MKm)
             print("team5 Server MKp: ", self.MKp)
 
-    def sha_hash(self, data):
-        hasher = SHA.new()
-        hasher.update(data)
-        return hasher.digest()
+
+    def load_cert(self, address):
+        self.cert = getCertsForAddr(address)
 
     def load_sk(self, address):
-        key_bytes = getPrivateKeyForAddr("hello")
+        key_bytes = getPrivateKeyForAddr(address)
         self.SKm = serialization.load_pem_private_key(
             key_bytes,
             password=None,
             backend=default_backend()
         )
+
+    def sha_hash(self, data):
+        hasher = SHA.new()
+        hasher.update(data)
+        return hasher.digest()
 
     def rsa_enc(self, pk, data):
         return pk.encrypt(
@@ -204,47 +204,63 @@ class PLSProtocol(StackingProtocol):
 
     def cert_verification(self, cert_list):
         cert = x509.load_pem_x509_certificate(cert_list[0], default_backend())
-        print(self.GetCommonName(cert))
-        print(self.transport.get_extra_info("peername")[0])
+        if self.GetCommonName(cert) != self.transport.get_extra_info("peername")[0]:
+            print(self.GetCommonName(cert))
+            print(self.transport.get_extra_info("peername")[0])
+            self.send_error("team5 certificate verification failed")
         for i in range(1, len(cert_list)):
             # print(i)
             cert = x509.load_pem_x509_certificate(cert_list[i - 1], default_backend())
             pk = x509.load_pem_x509_certificate(cert_list[i], default_backend()).public_key()
-            pk.verify(
-                cert.signature,
-                cert.tbs_certificate_bytes,
-                padding.PKCS1v15(),
-                hashes.SHA256()
-            )
+            try:
+                pk.verify(
+                    cert.signature,
+                    cert.tbs_certificate_bytes,
+                    padding.PKCS1v15(),
+                    hashes.SHA256()
+                )
+            except Exception as e:
+                print(e)
+                print("team5 certificate verification failed")
+                self.send_error("team5 certificate verification failed")
 
-    def load_cert(self):
-        address = "hello"
-        self.cert = getCertsForAddr(address)
+    def digest_verification(self, digest):
+        if digest != self.sha_hash(self.digest):
+            self.send_error("team5 digest verification failed")
+            self.transport.close()
 
     def mac_verify(self, data, mac):
         h = hmac.HMAC(self.MKp, hashes.SHA1(), backend=default_backend())
         h.update(data)
         try:
             h.verify(mac)
-            return True
         except Exception as e:
             print(e)
-            return False
+            print("team5 MAC verification failed")
+            self.send_error("team5 MAC verification failed")
+
+    def send_error(self, err):
+        pkt = PlsClose.set(err)
+        pkt_bytes = pkt.__serialize__()
+        self.transport.write(pkt_bytes)
+
 
 class PLSServerProtocol(PLSProtocol):
     def connection_made(self, transport):
         # print("PLSServer: Received a connection from {}".format(transport.get_extra_info("peername")))
+        address, port = transport.get_extra_info("sockname")
         self.transport = transport
-        self.load_cert()
-        self.load_sk('server_certificate/local.key')
+        self.load_cert(address)
+        self.load_sk(address)
 
 
 class PLSClientProtocol(PLSProtocol):
     def connection_made(self, transport):
         # print("PLSClient: Connection established with server")
+        address, port = transport.get_extra_info("sockname")
         self.transport = transport
-        self.load_cert()
-        self.load_sk('client_certificate/local.key')
+        self.load_cert(address)
+        self.load_sk(address)
         self.handshake()
 
     def handshake(self):
