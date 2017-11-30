@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!-- This template is for creating an Internet Draft using xml2rfc,
+    which is available here: http://xml2rfc.ietf.org. -->
+<!-- used by XSLT processors -->
+<!-- For a complete list and description of processing instructions (PIs), 
+    please see http://xml2rfc.ietf.org/authoring/README.html. -->
+<!-- Below are generally applicable Processing Instructions (PIs) that most I-Ds might want to use.
+    (Here they are set differently than their defaults in xml2rfc v1.32) -->
+<?rfc strict="no" ?>
+<!-- give errors regarding ID-nits and DTD validation -->
+<!-- control the table of contents (ToC) -->
+<?rfc toc="yes"?>
+<!-- generate a ToC -->
+<?rfc tocdepth="4"?>
+<!-- the number of levels of subsections in ToC. default: 3 -->
+<!-- control references -->
+<?rfc symrefs="yes"?>
+<!-- use symbolic references tags, i.e, [RFC2119] instead of [1] -->
+<?rfc sortrefs="yes" ?>
+<!-- sort the reference entries alphabetically -->
+<!-- control vertical white space 
+    (using these PIs as follows is recommended by the RFC Editor) -->
+<?rfc compact="yes" ?>
+<!-- do not start each main section on a new page -->
+<?rfc subcompact="no" ?>
+<!-- keep one blank line between list items -->
+<!-- end of list of popular I-D processing instructions -->
+
+<rfc category="std" docName="PRFC2" ipr="playgroundStd_v1_0" number="2">
+ <!-- category values: std, bcp, info, exp, and historic
+    ipr values: trust200902, noModificationTrust200902, noDerivativesTrust200902,
+       or pre5378Trust200902, playgroundWinter201501
+    you can add the attributes updates="NNNN" and obsoletes="NNNN" 
+    they will automatically be output with "(if approved)" -->
+
+ <!-- ***** FRONT MATTER ***** -->
+
+ <front>
+   <!-- The abbreviated title is used in the page header - it is only necessary if the 
+        full title is longer than 39 characters -->
+
+   <title abbrev="PRFC's">Playground Request For Comments 2 (PLS)</title>
+
+   <!-- add 'role="editor"' below for the editors if appropriate -->
+
+   <!-- Another author who claims to be an editor -->
+
+   <author fullname="S. Futch, Y. Fan, Y. Jou, M. Zhang, R.H. Luo" initials="S.F, Y.F, Y.J, M.Z, R.L." role="Authors"
+           surname="Futch, Fan, Jou, Zhang, Luo">
+     <organization>JHU Network Security Fall 2017</organization>
+
+     <address>
+       <postal>
+         <street>JHU Malone Hall/3400 North Charles St.</street>
+
+         <!-- Reorder these if your country does things differently -->
+
+         <city>Baltimore</city>
+
+         <region>MD</region>
+
+         <code>21218</code>
+
+         <country>USA</country>
+       </postal>
+
+       <phone>Multiple</phone>
+
+       <email>N/A</email>
+
+       <!-- uri and facsimile elements may also be added -->
+     </address>
+   </author>
+
+   <date year="2017" />
+
+   <!-- If the month and year are both specified and are the current ones, xml2rfc will fill 
+        in the current day for you. If only the current year is specified, xml2rfc will fill 
+	 in the current day and month for you. If the year is not the current one, it is 
+	 necessary to specify at least a month (xml2rfc assumes day="1" if not specified for the 
+	 purpose of calculating the expiry date).  With drafts it is normally sufficient to 
+	 specify just the year. -->
+
+   <!-- Meta-data Declarations -->
+
+   <area>General</area>
+
+   <workgroup>Network Working Group 5</workgroup>
+
+   <!-- WG name at the upperleft corner of the doc,
+        IETF is fine for individual submissions.  
+	 If this element is not present, the default is "Network Working Group",
+        which is used by the RFC Editor as a nod to the history of the IETF. -->
+
+   <keyword>PRFC</keyword>
+
+   <!-- Keywords will be incorporated into HTML output
+        files in a meta tag but they have no effect on text or nroff
+        output. If you submit your draft to the RFC Editor, the
+        keywords will be used for the search engine. -->
+
+   <abstract>
+     <t>This document specifies version 1.0 of the PLS Protocol (Playground Layer Security Protocol).
+	 The PLS protocol is a network transmission provides Johns 
+      Hopkins University Network Security students a standard in which 
+      to develop secure network protocols in the PLAYGROUND (Poly-Localized 
+      Algorithmic Yields Generated Remotely On Unused Network Devices) 
+      environment. This protocol allows client/server applications to communicate in a way that prevents
+	  eavesdropping. This PRFC specifies the format standard for the PLS protocol.</t>
+   </abstract>
+ </front>
+
+	<middle>
+   <section title="Status of this Memo">
+     <t>This document specifies a Playgrounds standards track protocol for
+   the Playground Experiment, and requests discussion and suggestions
+   for improvements.  Distribution of this memo is unlimited.</t>
+     
+    <section title="Copyright Notice">
+       <t>Copyright (c) 2017 SETH JAMES NIELSON.  All rights reserved.</t>
+       <t>This document is used solely for educational purposes.  Any citations
+   within this document are also for educational purposes and also for
+   technical reference.  If any of these cited elements are protected
+   under copyright, their inclusion here falls under Fair Use
+   provisions.  See Fully Copyright Notice and Intellectual Property statement at end of document.</t>
+     </section>
+   </section>
+     
+   <section title="Introduction">
+    <t>The main goal of the PLS protocol is to provide privacey and data integrity between two 
+	communication platforms. It is intended for use on the PLAYGROUND network as a
+    secure protocol between hosts and servers in packet-switched computer 
+    networks, layered on top of Transmission Control Protocols (TCP)
+    as the underlying methodology for network communication. The PLS protocol provides connection
+	security that has two basic properties: 
+	
+		- The connection is private.  Cryptography is used for data encryption. Each connection's keys
+		are generated uniquely and are based upon a secret negotiated by the PLS Handshake protocol.
+		
+		- The connection is reliable. Message transport includes a message integrity check using a keyed
+		MAC. A secure hash function (e.g., SHA-1,SHA-256, etc.) are used for MAC computations.  
+	</t>
+    
+    <t>The PLS protocol is used for encapsulation of higher level protocols of various types, allowing the 
+	server and client to authenticate each other and negotiate an encryptions algorithm prior to the application
+	protocol transmits or receives its first byte of data. Nested within the protocol is the handshake.
+	The PLS Handshake protocol provides connection security which has three basic properties:
+		
+		- Each peer's identity can be authenticated using assymetric cryptography, such as public/private key, or PKI.
+		This authentication shall not be made optional, but is required for the peers to communicate.
+		
+		- Negotian of the shared secret is secure: it must be unavailable to eavesdroppers, with attacker unable
+		to obtain the secret, even if placed in the middle of the communication.
+		
+		- the connection for the negotiation is reliable: it cannot be modified by an attacker without
+		detection by the intented to the communication.
+	
+	
+	The PLS protocol is intended to be application protocol independent. Higher-level protocols are able 
+	to layer on top of the PLS transparently.</t>
+     </section>
+	 
+	<section title="Requirements Terminology">
+    <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in RFC 2119 [REQ].</t>
+	</section>
+  
+    
+   <section title="Goals">
+    <t>The goals of the PLS protocol, in order of merit and priority, are as follows:</t>
+    
+	<t><list style="numbers">
+    	<t>Cryptographic Security: PLS must be used to establish a secure connection between two
+		or more parties.</t>
+    	<t>Interoperability: Programmers and developers should be able to develop applications using 
+		PLS that can exchange crypographic parameters successfully wihout knowledge of each other's code.</t>
+    	<t>Extensibility: PLS is designed to provide a framework into which public key and other encryption
+		methods can be incorporated as necessary; thus negating needs for a new protocol or new security library.</t>
+    	<t>Relative efficiency: Cryptographic functions tend to be CPU intensive. PLS should attempt to reduce
+		unneccesary network activity and limit connections to those needed.</t>
+    </list></t>
+    </section>
+    
+    <section title="Goals of This Document">
+    <t>This document and PLS protocol itself are based upon the TLS (Transport Layer Security) version 1.2 
+	Protocol Specification as published in RFC 5245.  The differences between this protocol and TLS 1.2, though 
+	not dramatic, are significant enough to warrant mention.  PLS is effectively, TLS-Lite. It provides a handshake
+	protocol and allows for the exchange of public and private keys, as well as encryption and error handling. 
+	It is not intended to replace TLS or replicate it's robustness.</t>
+    
+    <t>This document is intended primarily for readers who will be implementing the protocol and for those performing
+	crypographic analysis of it.  The specification has been written with that in mind and is intended to 
+	reflect the needs of those groups.</t>
+
+   <t>This document does not supply any details of service definition or interface design, as it was not written
+   with that intention. It may cover specific areas of policy as needed for the maintenance of solid security.</t>
+    </section>
+      
+   <section title="HMAC and the Pseudorandom Function">
+    <t>After each side of the transmission finishes sending the handshake complete message, then they can initiate a data transmission
+	to the other side. In order to protect the authentication and protect the message integrity, the 
+	TLS layer uses a keyed Message Authentic Code. So, once the handshake is completed, both sides will generate 
+	an encryption and decryption engine, and on top of that, they will use a cipher suites that uses a construction 
+	known as HMAC. HMAC is based on a hash function. In the TLS protocol, the protocol will use the HMAC-SHA256 MAC 
+	engine and Verification engine.</t>
+
+    <t>On the client side, the encryption engine is configured with client side encryption key Ekc and IVc, they 
+	will serve as the initial counter value, they will be used to encrypt the first set of data, the MAC engine 
+	is configured with the key MKc, the key for Verification engine is configured with key MKs. The decryption 
+	engine is configured with server side encryption key EKs as the key and IVs as the initial counter value, 
+	they will be used to decrypt the data from the server, the MAC engine is configured with the key MKs, the 
+	key for Verification engine is configured with key MKc. </t>
+
+    <t>During the data transmission, the plain text P is encrypted by the encryption engine to generate the cipher 
+	text C. Once C is generated, then it will be passed to the MAC engine to produce a verification code V. This 
+	data is sent in a form of PLS Data message (C, V). </t>
+
+    <t>Once the other side received the data, the other side will pass the C extracted from the data into the Verification 
+	engine, and the Verification engine will calculate a verification code V’. If the V from the data does not match the 
+	V’, then the packet is considered wrong and will be discarded, and the connection remaining open. If V is the same as V’, then 
+	the cipher text is correct, then they will pass the C into the decryption engine to generate the P’ which is the plain 
+	text, then pass the data to the higher layer.</t>
+
+    <t>Once the transmission is done, it can send the message to close the session. To end the connection, either side needs 
+	to send the close packet PlsClose. If it is a normal shutdown, it MUST send the PlsClose packet without any error message. 
+	If either side receive an error message, they MUST shut down the connection.</t>
+  </section>
+   
+   <section title="Handshake protocol">
+    <t>Introduction</t>
+	
+    <t>the PLS Handshake Protocol allows servers and clients to authenticate each other and to negotiate cryptographic keys before 
+	the application protocol transmits or receives data. It is based upon two basic properties:</t>
+        <t><list style="numbers">
+            <t>The peer's identity can be authenticated.</t>
+            <t>The negotiations of shared secrets are confidential.</t>
+        </list></t>
+    <t>In order to achieve these properties, a certifying mechanism for public keys and a public key cipher scheme are needed. In PLS, 
+	we use x509 for the former, RSA for the later. To be more specific, x509 with SHA256 as its hash algorithm. RSA with 2048 key 
+	size, OAEP padding scheme, SHA1 hash algorithm. </t>
+
+   <t>The TLS Handshake Protocol involves the following steps:</t>
+    <t><list style="numbers">
+        <t>Exchange hello messages to ensure freshness of the session and exchange certificates.</t>
+        <t>Exchange encrypted premaster secret to agree on keys will be used in data transmission.</t>
+        <t>Exchange digest of all previous messages to make sure they both are in the same session.</t>
+    </list></t>
+    <t>Since sessions are usually initiated by clients, messages transmitted during handshakes can be listed chronologically.</t>
+    <t><list style="numbers">
+        <t>M1, C->S:  PlsHello(Nc, [C_Certs])</t>
+        <t>M2, S->C:  PlsHello(Ns, [S_Certs])</t>
+        <t>M3, C->S:  PlsKeyExchange( {PKc}S_public, Ns+1 )</t>
+        <t>M4, S->C:  PlsKeyExchange( {PKs}C_public, Nc+1 )</t>
+        <t>M5, S->C:  PlsHandshakeDone( Sha1(M1, M2, M3, M4) )</t>
+        <t>M6, C->S:  PlsHandshakeDone( Sha1(M1, M2, M3, M4) )</t>
+    </list></t>
+    <t>Note that in step 3, the digest they calculate does not include messages they exchange in this step. Hence, the server can send M5 
+	immediately after sending M4, although  the client must wait until it has received M4 before it sends M6. In this scenario, the server is the one that sends 
+	PlsHandshakeDone first.</t>
+   
+    <t>Detailed Description<t/>
+    <t>MESSAGE 1.</t>
+    <t>The Client sends the Server a PlsHello packet with a 64 bits random number Nc (“client nonce”), and a list of serialized certificates 
+	C_Certs ("Client Certs"). In the list, C_Certs[n+1] is the certificate of CA which issues C_Certs[n], and whether to include root 
+	CA in this list is optional. </t>
+
+   <t>MESSAGE 2.</t>
+    <t>The Client sends the Server a PlsHello packet with a 64 bits random number Nc (“client nonce”), and a list of serialized certificates 
+	C_Certs ("Client Certs"). In the list, C_Certs[n+1] is the certificate of CA which issues C_Certs[n], and whether to include root 
+	CA in this list is optional.</t>
+	
+	<t>MESSAGE 3.</t>
+    <t>The Client sends the Server a PlsKeyExchange packet. PKc (“Client Pre-Key”) (128 bits) is data that will be used by the client and the server to 
+	generate keys (explained below). Ns+1 is the Server Nonce sent in M2 plus one. PKc is encrypted under the public key contained in S’s certificate 
+	(the first certificate in S_Certs).</t>
+	
+	<t>MESSAGE 4.</t>
+    <t>The Server sends the Client a PlsKeyExchange packet. PKs (“Server Pre-Key”) is data (128 bits) that will be used by the client and server to generate 
+	keys (explained below). Nc+1 is the Client’s Nonce sent in M1 plus one. PKs is encrypted under the public key contained in C’s certificate 
+	(the first certificate in S_Certs).</t>
+	
+	<t>MESSAGE 5.</t>
+    <t>The Client sends the Server a PlsHandshakeDone packet with the hash of the previous four messages M1 through M4. </t>
+	
+	<t>MESSAGE 6.</t>
+    <t>The Server sends the Client a PlsHandshakeDone packet with the hash of the previous four messages M1 through M4. Note that M5 is not contained 
+	in the hash, so this message can be sent immediately after receiving M4 (e.g., M5 and M6 can be sent simultaneously).</t>
+   
+	<t>Key Derivation</t>
+	<t> The Client needs to generate the following four keys</t>
+	 <t><list style="numbers">
+        <t>EKc - Client Encryption Key</t>
+        <t>EKs - Server Encryption Key (which is the client’s decryption key)</t>
+        <t>MKc - Client MAC Key</t>
+        <t>MKs - Server MAC Key (which is the client’s verification key)</t>
+     </list></t>
+	 
+	 <t>The Server needs to generate the same four keys as well.</t>
+
+	<t>Each key is 128-bits long.</t>
+
+	<t>Both client and server also have to generate an IVc (“Client encryption IV”) and an IVs 
+	(“Server encryption IV”), each of which is also of size 128 bits.</t>
+
+	<t>To derive each key, generate a stream using repeated SHA1 hashing of the seed “PLS1.0” + Nc + Ns + PKc + PKs. Each hash generates 160 bits.</t>
+	<t><list style="empty">
+        <t>block_0 = hash(“PLS1.0"+Nc+Ns+PKc+PKs)</t>
+        <t>block_1 = hash(block_0)</t>
+        <t>block_2 = hash(block_1)</t>
+        <t>block_3 = hash(block_2)</t>
+		<t>block_4 = hash(block_3)</t>
+     </list></t>
+	 
+	 <t>Generating 5 blocks will generate 800 bits. The 800 bits can be cut up to create the 768 bits of keys and IV’s described above (with 32 bits discarded). 
+	 The following is the ordering of that derivation.</t>
+	 
+	 <t><list style="empty">
+        <t>EKc = first 128 bits</t>
+        <t>EKs = second 128 bits</t>
+        <t>IVc = third 128 bits</t>
+        <t>IVs = fourth 128 bits</t>
+		<t>MKc = 5th 128 bits</t>
+		<t>MKs = 6th 128 bits </t>
+     </list></t>
+	 
+	 <t> Error Handling</t>
+	 
+	 <t> If either the client or server detects an error, it should send a PlsClose packet with an error message. The text of the error message is implementation specific, 
+	 but the presence of an error message indicates that it was not a normal termination.</t>
+	  
+	</section>
+   
+   	<section title="Hello Messages">
+	<t>PlsHello is used in the process of handshake. It is used to start a handshake process. When the Client wants to
+	connect with the Server, it can send a PlsHello() packet to the Server. And then the handshake process will be started.
+	There are three attributes in this packet which are DEFINITION_IDENTIFIER, DEFINITION_VERSION and FIELDS. At the same 
+	time, there are two attributes in the FIELDS and they are “Nonce” and “Certs”.
+	“Nonce” is a 64 bit random number and its type is UNIT64. It is used to ensure that this message is fresh. “Certs” is a
+	list of certificates and its type is LIST(BUFFER). It is used to make sure that this message is has an authenticated 
+	certificate attached, thus it 	can be trusted. The first certificate must be the sender's certificate, followed by any 
+	other certificates required for	authentication.
+	</t>
+	<t>PlsKeyExchange is also used in the handshake. It is used to exchange keys between Client and Server during 
+	the process. There are three attributes in this packet which are DEFINITION_IDENTIFIER, DEFINITION_VERSION
+	and FIELDS. There are two attributes in the FIELDS and they are “PreKey” and “NoncePlusOne”.
+	“PreKey” is a 128-bit data and its type is BUFFER. It is used by the client and server to generate keys. PreKey is 
+	encrypted under the public key contained in the certificate of the other side(Client side or Server side). 
+	"NoncePlusOne" is a 64 bit random number and its type is UNIT64. It is used to ensure that this message is fresh.
+	</t>
+	<t>PlsHandshakeDone is also used in the process of handshake. It is used to represent the completion of the handshake 
+	process. There are three attributes in this packet which are DEFINITION_IDENTIFIER, DEFINITION_VERSION and FIELDS. In this packet,
+	there is just one attribute in the FIELDS and it is “ValidationHash”.
+	“ValidationHash” is used to contain the hash of the previous four messages during the process of handshake(PlsHello 
+	and PlsKeyExchange) and its type is BUFFER.
+	</t>
+	<t>PlsData is used after the process of handshake and in the process of data transmission. It is used to transmit data 
+	between Client and Server. There are three attributes in this packet which are DEFINITION_IDENTIFIER, DEFINITION_VERSION
+	and FIELDS. In this packet, there are two attributes in the FIELDS and they are “Ciphertext” and “Mac”.
+	“Ciphertext” is the output of the message encryption process where the plaintext message is encrypted on both 
+	sides(Client and Server) and its type is BUFFER. “Mac” is the Message Authentication Code and its type is BUFFER. It is 
+	used to ensure the integrity of the message.
+	</t>
+	<t>PlsClose is also used after the process of handshake. It is used to end a connection. When the Client wants to end 
+	the connection with the Server, it will send a PlsCLose message to the Server. There are three attributes in this 
+	packet which are DEFINITION_IDENTIFIER, DEFINITION_VERSION and FIELDS. There is just one attribute 
+	in the FIELDS and it is “Error”.
+	The type of “Error” is STRING and it is OPTIONAL. And it is used to represent the end the connection.
+	</t>
+	</section>
+   
+    
+   <section title=" Full Copyright Notice">   
+     <t>"Copyright (C) Seth James Nielson (2017).  All Rights Reserved.</t>
+
+   <t>This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the PLAYGROUND experiment or
+   other associated organizations, except by explicit permission.</t>
+
+   <t>The limited permissions granted above are perpetual and will not be
+   revoked by SETH JAMES NIELSON or his successors or assigns.</t>
+
+   <t>This document and the information contained herein is provided on an
+   "AS IS" basis and SETH JAMES NIELSON and associated academic
+   institutions DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE."</t>
+     </section>
+   
+   
+    <section title=" Intellectual Property">   
+    <t>The PLAYGROUND framework and student submissions for PLAYGROUND are
+   intended to be free of any intellectual property conflicts.  All
+   submitting parties, especially students, are not allowed to submit
+   source code, specifications, or other components that are known to be
+   protected by copyright, patents, or other IP mechanisms.  Students
+   submitting creative content grant shared rights and ownership of
+   their content to the PLAYGROUND project.  Specifically, any
+   submission can be used in future educational settings including
+   subsequent PLAYGROUND experiments.</t>
+
+   <t>Any interested party is invited to bring to the experiment director's
+   attention any copyrights, patents or patent applications, or other
+   proprietary rights which may cover technology that may be currently
+   in use without permission.</t>
+
+   <t>It should be noted that these statements have not been reviewed by
+   legal counsel.  Moreover, the academic institutions at which
+   PLAYGROUND experiments take place may have additional or even
+   conflicting copyright and intellectual property rules.  Accordingly,
+   concerned parties may need to contact their own lawyer and/or
+   resources at their institution to understand the rights and
+   limitations associated with code donated to a PLAYGROUND experiment."</t>
+     </section>
+   
+   
+   
+    </middle>
+	<back>
+   
+   <references title="Normative References">
+     <!--?rfc include="reference.RFC.5246.xml"?-->&RFC5246;
+     
+      
+   </references>
+
+
+ </back>
+</rfc>
