@@ -90,7 +90,7 @@ class PLSProtocol(StackingProtocol):
                 self.transport.write(pkt_rsps_bytes)
                 self.digest = self.digest + pkt.__serialize__() + pkt_rsps_bytes
                 self.seed = self.seed + PKc + self.PreKey
-                print("Server seed: ", self.seed)
+                # print("Server seed: ", self.seed)
                 self.key_derivation(self.seed, False)
                 self.state = 3
                 # print("Server's digest: ", self.digest)
@@ -103,7 +103,7 @@ class PLSProtocol(StackingProtocol):
                 PKs = self.rsa_dec(self.SKm, pkt.PreKey)
                 self.digest = self.digest +  pkt.__serialize__()
                 self.seed = self.seed + PKs
-                print("Client seed: ", self.seed)
+                # print("Client seed: ", self.seed)
                 self.key_derivation(self.seed, True)
                 pkt_rsps = PlsHandshakeDone.set(self.digest)
                 pkt_rsps_bytes = pkt_rsps.__serialize__()
@@ -145,8 +145,8 @@ class PLSProtocol(StackingProtocol):
             self.IVp = block_2[8:] + block_3[:4]
             self.MKm = block_3[4:]
             self.MKp = block_4[:16]
-            print("Client EKm: ", self.EKm)
-            print("Client EKp: ", self.EKp)
+            # print("Client EKm: ", self.EKm)
+            # print("Client EKp: ", self.EKp)
         else:
             self.EKp = block_0[:16]
             self.EKm = block_0[16:] + block_1[:12]
@@ -154,8 +154,8 @@ class PLSProtocol(StackingProtocol):
             self.IVm = block_2[8:] + block_3[:4]
             self.MKp = block_3[4:]
             self.MKm = block_4[:16]
-            print("Server EKm: ", self.EKm)
-            print("Server EKp: ", self.EKp)
+            # print("Server EKm: ", self.EKm)
+            # print("Server EKp: ", self.EKp)
 
     def sha_hash(self, data):
         hasher = SHA.new()
@@ -198,8 +198,8 @@ class PLSProtocol(StackingProtocol):
         cert = x509.load_pem_x509_certificate(cert_list[0], default_backend())
         print(self.GetCommonName(cert))
         print(self.transport.get_extra_info("peername")[0])
-        for i in range(1, 3):
-            print(i)
+        for i in range(1, len(cert_list)):
+            # print(i)
             cert = x509.load_pem_x509_certificate(cert_list[i - 1], default_backend())
             pk = x509.load_pem_x509_certificate(cert_list[i], default_backend()).public_key()
             pk.verify(
@@ -208,7 +208,6 @@ class PLSProtocol(StackingProtocol):
                 padding.PKCS1v15(),
                 hashes.SHA256()
             )
-        return True
 
     def load_cert(self):
         address = "hello"
