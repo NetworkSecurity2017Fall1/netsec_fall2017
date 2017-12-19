@@ -125,7 +125,8 @@ class PLSProtocol(StackingProtocol):
                 self.mac_verify(pkt.Ciphertext, pkt.Mac)
                 self.higherProtocol().data_received(self.aesDecrypter.decrypt(pkt.Ciphertext))
         elif type(pkt) is PlsClose:
-            print("team5 received error message: ", pkt.Error)
+            #print("team5 received error message: ", pkt.Error)
+            self.transport.close()
 
 
     def key_derivation(self, seed, role): # True is client, False is Server
